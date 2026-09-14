@@ -82,11 +82,15 @@ function initClockAndDates() {
     const mm = String(timeNow.getMinutes()).padStart(2, '0');
     const ss = String(timeNow.getSeconds()).padStart(2, '0');
     const clockEl = document.getElementById('liveClock');
+    const clockMobileEl = document.getElementById('liveClockMobile');
     if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss} WIB`;
+    if (clockMobileEl) clockMobileEl.textContent = `${hh}:${mm} WIB`;
   }, 1000);
 }
 
 // ================= ABSENSI ACTIONS =================
+let pendingCancelId = null;
+
 function mulaiAbsen(id) {
   const beswan = BESWAN_DATA.find(b => b.id === id);
   if (!beswan) return;
@@ -108,11 +112,40 @@ function mulaiAbsen(id) {
   renderApp();
 }
 
-function batalkanAbsen(id) {
+function bukaModalBatalkan(id) {
+  const beswan = BESWAN_DATA.find(b => b.id === id);
+  if (!beswan) return;
+
+  pendingCancelId = id;
+  const modal = document.getElementById('cancelConfirmModal');
+  const desc = document.getElementById('cancelModalDesc');
+  const confirmBtn = document.getElementById('confirmCancelActionBtn');
+
+  if (desc) {
+    desc.innerHTML = `Yakin ingin membatalkan presensi untuk <strong>${beswan.nama}</strong>? Timer akan dihentikan dan status kembali menjadi Belum Hadir.`;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.onclick = eksekusiBatalkan;
+  }
+
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeCancelModal() {
+  pendingCancelId = null;
+  const modal = document.getElementById('cancelConfirmModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function eksekusiBatalkan() {
+  if (!pendingCancelId) return;
+
+  const id = pendingCancelId;
   const beswan = BESWAN_DATA.find(b => b.id === id);
   const nama = beswan ? beswan.nama : 'Beswan';
-
-  if (!confirm(`Yakin ingin membatalkan presensi untuk ${nama}?`)) return;
 
   const state = getAttendanceState();
   if (state[id]) {
@@ -120,8 +153,14 @@ function batalkanAbsen(id) {
     saveAttendanceState(state);
   }
 
+  closeCancelModal();
   showToast(`Presensi untuk ${nama} telah dibatalkan.`, 'warning');
   renderApp();
+}
+
+// Backward compatibility helper
+function batalkanAbsen(id) {
+  bukaModalBatalkan(id);
 }
 
 function selesaikanAbsen(id) {
@@ -267,9 +306,8 @@ function renderTable(data, todayHari, state) {
     const status = rec ? rec.status : 'idle';
 
     const tr = document.createElement('tr');
-    tr.className = `transition-colors duration-150 ${
-      isTodayPiket ? 'row-piket-today' : 'hover:bg-gray-50'
-    }`;
+    tr.className = `transition-colors ${isTodayPiket ? 'row-piket-today font-medium' : 'hover:bg-gray-50'
+      }`;
 
     let statusBadgeHtml = '';
     let actionBtnHtml = '';
@@ -277,51 +315,53 @@ function renderTable(data, todayHari, state) {
     if (status === 'countdown') {
       const timeLeft = formatRemainingSeconds(rec.targetEndTime - Date.now());
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 pulse-subtle">
-          <i class="fa-solid fa-hourglass-half text-kse-secondary"></i>
-          <span>Proses (<span class="timer-display-${beswan.id} font-mono">${timeLeft}</span>)</span>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+          <i class="fa-regular fa-clock text-kse-secondary"></i>
+          <span>Piket (<span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>)</span>
         </div>
       `;
       actionBtnHtml = `
         <button
-          onclick="batalkanAbsen(${beswan.id})"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition shadow-sm"
-          title="Batalkan presensi jika keluar sekretariat sebelum 1 jam"
+          onclick="bukaModalBatalkan(${beswan.id})"
+          class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 transition"
+          title="Batalkan presensi jika beswan meninggalkan sekretariat"
         >
-          <i class="fa-solid fa-ban"></i> Batalkan
+          <i class="fa-solid fa-xmark text-[11px]"></i> Batalkan
         </button>
       `;
     } else if (status === 'selesai') {
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-check-double text-emerald-600"></i>
-          <span>Hadir (${rec.jamMasuk || ''} - ${rec.jamSelesai || ''})</span>
+        <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <span class="inline-flex items-center gap-1 text-emerald-700 font-bold">
+            <i class="fa-solid fa-check text-[10px]"></i> Hadir (Sah)
+          </span>
+          <span class="text-[10px] text-gray-500 font-mono">${rec.jamMasuk || ''} - ${rec.jamSelesai || ''}</span>
         </div>
       `;
       actionBtnHtml = `
-        <button disabled class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed">
-          <i class="fa-solid fa-lock"></i> Selesai
+        <button disabled class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed">
+          <i class="fa-solid fa-check text-[10px]"></i> Selesai
         </button>
       `;
     } else {
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-          <i class="fa-regular fa-circle text-gray-400"></i>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
           <span>Belum Hadir</span>
         </div>
       `;
       actionBtnHtml = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow hover:shadow-md active:scale-95"
+          class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk
+          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-[11px]"></i> Masuk
         </button>
       `;
     }
 
     const hariBadge = isTodayPiket
-      ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-extrabold bg-kse-primary text-white shadow-sm">
+      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-kse-primary text-white">
            <i class="fa-solid fa-star text-kse-secondary text-[10px]"></i> ${beswan.hari_piket}
          </span>`
       : `<span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
@@ -329,19 +369,19 @@ function renderTable(data, todayHari, state) {
          </span>`;
 
     tr.innerHTML = `
-      <td class="py-4 px-6 text-center text-xs text-gray-500 font-semibold">${beswan.id}</td>
-      <td class="py-4 px-6">
-        <div class="font-bold text-gray-900 flex items-center gap-2">
-          <span>${beswan.nama}</span>
-          ${isTodayPiket ? '<span class="text-[10px] bg-kse-secondary/20 text-kse-earth px-2 py-0.5 rounded-full font-bold border border-kse-secondary/40">Piket Hari Ini</span>' : ''}
+      <td class="py-3 px-4 text-center text-xs text-gray-500 font-medium">${beswan.id}</td>
+      <td class="py-3 px-4">
+        <div class="flex flex-col items-start gap-1">
+          <span class="font-semibold text-gray-900 leading-snug break-words">${beswan.nama}</span>
+          ${isTodayPiket ? '<span class="inline-block text-[10px] bg-kse-secondary/20 text-kse-earth px-1.5 py-0.2 rounded font-semibold border border-kse-secondary/40">Piket Hari Ini</span>' : ''}
         </div>
       </td>
-      <td class="py-4 px-6 text-gray-600 text-xs font-medium">
-        <span class="inline-block max-w-xs truncate" title="${beswan.divisi}">${beswan.divisi}</span>
+      <td class="py-3 px-4 text-gray-600 text-xs">
+        <span class="leading-snug break-words" title="${beswan.divisi}">${beswan.divisi}</span>
       </td>
-      <td class="py-4 px-6 text-center">${hariBadge}</td>
-      <td class="py-4 px-6 text-center">${statusBadgeHtml}</td>
-      <td class="py-4 px-6 text-center">${actionBtnHtml}</td>
+      <td class="py-3 px-4 text-center">${hariBadge}</td>
+      <td class="py-3 px-4 text-center">${statusBadgeHtml}</td>
+      <td class="py-3 px-4 text-center">${actionBtnHtml}</td>
     `;
 
     tbody.appendChild(tr);
@@ -359,11 +399,10 @@ function renderCards(data, todayHari, state) {
     const status = rec ? rec.status : 'idle';
 
     const card = document.createElement('div');
-    card.className = `p-4 rounded-xl border transition-all ${
-      isTodayPiket
-        ? 'bg-[#FAF7CC]/80 border-2 border-kse-primary shadow-sm'
+    card.className = `p-3.5 rounded-lg border transition-all ${isTodayPiket
+        ? 'bg-[#FAF7CC]/60 border-kse-primary shadow-xs'
         : 'bg-white border-gray-200'
-    }`;
+      }`;
 
     let statusBadge = '';
     let actionBtn = '';
@@ -371,40 +410,40 @@ function renderCards(data, todayHari, state) {
     if (status === 'countdown') {
       const timeLeft = formatRemainingSeconds(rec.targetEndTime - Date.now());
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-          <i class="fa-solid fa-hourglass-half text-kse-secondary"></i>
-          <span class="timer-display-${beswan.id} font-mono">${timeLeft}</span>
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+          <i class="fa-regular fa-clock text-kse-secondary"></i>
+          <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>
         </span>
       `;
       actionBtn = `
         <button
-          onclick="batalkanAbsen(${beswan.id})"
-          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 active:bg-rose-100 flex items-center justify-center gap-2"
+          onclick="bukaModalBatalkan(${beswan.id})"
+          class="w-full py-1.5 px-3 rounded-md text-xs font-semibold text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 flex items-center justify-center gap-1.5"
         >
-          <i class="fa-solid fa-ban"></i> Batalkan Presensi
+          <i class="fa-solid fa-xmark text-xs"></i> Batalkan Presensi
         </button>
       `;
     } else if (status === 'selesai') {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-check text-emerald-600"></i> Hadir
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-check text-emerald-600"></i> Hadir (60m)
         </span>
       `;
       actionBtn = `
-        <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> Selesai (60 Menit)
+        <button disabled class="w-full py-1.5 px-3 rounded-md text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Selesai (${rec.jamMasuk || ''} - ${rec.jamSelesai || ''})
         </button>
       `;
     } else {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
           Belum Hadir
         </span>
       `;
       actionBtn = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-kse-primary active:bg-kse-darkGreen flex items-center justify-center gap-2 shadow"
+          class="w-full py-2 px-3 rounded-md text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen flex items-center justify-center gap-1.5 shadow-xs"
         >
           <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk (1 Jam)
         </button>
@@ -413,27 +452,26 @@ function renderCards(data, todayHari, state) {
 
     card.innerHTML = `
       <div class="flex items-start justify-between gap-2 mb-2">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-gray-400">#${beswan.id}</span>
-            <h4 class="text-sm font-bold text-gray-900">${beswan.nama}</h4>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] font-bold text-gray-400">#${beswan.id}</span>
+            <h4 class="text-xs font-bold text-gray-900 truncate">${beswan.nama}</h4>
           </div>
-          <p class="text-xs text-gray-500 mt-0.5">${beswan.divisi}</p>
+          <p class="text-[11px] text-gray-500 mt-0.5 truncate">${beswan.divisi}</p>
         </div>
-        <div>
+        <div class="shrink-0">
           ${statusBadge}
         </div>
       </div>
 
-      <div class="flex items-center justify-between text-xs py-2 border-t border-gray-100/80 my-2">
-        <span class="text-gray-500 font-medium">Jadwal Piket:</span>
-        ${
-          isTodayPiket
-            ? `<span class="font-extrabold text-kse-primary bg-kse-secondary/30 px-2 py-0.5 rounded flex items-center gap-1 border border-kse-secondary/50">
-                 <i class="fa-solid fa-star text-kse-earth text-[10px]"></i> ${beswan.hari_piket} (Hari Ini)
+      <div class="flex items-center justify-between text-[11px] py-1.5 border-t border-gray-100 my-1.5">
+        <span class="text-gray-500">Jadwal Piket:</span>
+        ${isTodayPiket
+        ? `<span class="font-bold text-kse-primary bg-kse-secondary/30 px-1.5 py-0.2 rounded flex items-center gap-1 border border-kse-secondary/50">
+                 <i class="fa-solid fa-star text-kse-earth text-[9px]"></i> ${beswan.hari_piket} (Hari Ini)
                </span>`
-            : `<span class="font-medium text-gray-700">${beswan.hari_piket}</span>`
-        }
+        : `<span class="font-medium text-gray-700">${beswan.hari_piket}</span>`
+      }
       </div>
 
       <div class="mt-2">
@@ -485,9 +523,9 @@ function setFilter(filterType) {
     const btn = filterButtons[key];
     if (!btn) return;
     if (key === filterType) {
-      btn.className = "filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-sm";
+      btn.className = "filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-xs";
     } else {
-      btn.className = "filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200";
+      btn.className = "filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300";
     }
   });
 

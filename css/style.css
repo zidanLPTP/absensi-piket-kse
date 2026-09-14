@@ -1,5 +1,5 @@
 /* ==========================================================================
-   IDENTITAS VISUAL & TEMA PAGUYUBAN KSE UNRI (UI/UX PRO MAX POLISHED)
+   IDENTITAS VISUAL & TEMA PAGUYUBAN KSE UNRI (PROFESIONAL & CLEAN)
    Primary: #004834 | Accent: #EEB319 | Highlight: #FAF7CC
    ========================================================================== */
 
@@ -10,7 +10,7 @@
   --kse-highlight: #FAF7CC;
   --kse-earth: #6F4E37;
   --kse-earth-light: #9C7C5A;
-  --kse-bg: #F8FAF9;
+  --kse-bg: #F4F6F5;
 }
 
 body {
@@ -24,46 +24,39 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: 'League Spartan', sans-serif;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Subtil & Bersih */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #F1F5F3;
+  background: #E5E7EB;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--kse-primary);
-  border-radius: 4px;
 }
 
-/* Pulse animation for active countdown */
-.pulse-subtle {
-  animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(238, 179, 25, 0.4);
-  }
-  50% {
-    opacity: 0.95;
-    box-shadow: 0 0 0 6px rgba(238, 179, 25, 0);
-  }
-}
-
-/* Row highlight styling */
+/* Highlight Piket Hari Ini - Kontras namun Elegan */
 .row-piket-today {
-  background-color: rgba(250, 247, 204, 0.65) !important;
-  border-left: 4px solid var(--kse-primary) !important;
+  background-color: #FAF7CC !important;
+  border-left: 3px solid var(--kse-primary) !important;
 }
 .row-piket-today:hover {
-  background-color: rgba(250, 247, 204, 0.95) !important;
+  background-color: #F5F1B5 !important;
 }
 
-/* Touch targets and smooth hover */
-button {
-  cursor: pointer;
-  user-select: none;
+/* Fixed Table Layout Rule */
+.table-fixed-kse {
+  table-layout: fixed;
+  width: 100%;
 }
+
+/* Smooth Focus states */
+button, input {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
