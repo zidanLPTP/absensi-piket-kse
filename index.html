@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Absensi Piket Sekretariat - Paguyuban KSE UNRI</title>
+
+  <!-- Google Fonts: League Spartan (Header) & Montserrat (Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kse: {
+              primary: '#004834',
+              secondary: '#EEB319',
+              highlight: '#FAF7CC',
+              earth: '#6F4E37',
+              earthLight: '#9C7C5A',
+              darkGreen: '#003324',
+              softGreen: '#E6EFE9'
+            }
+          },
+          fontFamily: {
+            spartan: ['"League Spartan"', 'sans-serif'],
+            montserrat: ['"Montserrat"', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #F8FAF9;
+      color: #1F2937;
+    }
+    h1, h2, h3, h4, h5, h6, .font-heading {
+      font-family: 'League Spartan', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #004834;
+      border-radius: 4px;
+    }
+    .pulse-subtle {
+      animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .92; transform: scale(1.015); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-kse-secondary selection:text-kse-primary">
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="bg-kse-primary text-white sticky top-0 z-40 shadow-lg border-b-4 border-kse-secondary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo & Brand Title -->
+        <div class="flex items-center space-x-3 sm:space-x-4">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center shadow-md p-1 border-2 border-kse-secondary overflow-hidden">
+            <i class="fa-solid fa-graduation-cap text-kse-primary text-2xl"></i>
+          </div>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-wide uppercase leading-tight font-spartan text-white">
+              Paguyuban KSE UNRI
+            </h1>
+            <p class="text-xs sm:text-sm text-kse-secondary font-semibold tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left"></i> Presensi Piket Sekretariat
+            </p>
+          </div>
+        </div>
+
+        <!-- Live Clock & Today's Indicator -->
+        <div class="flex flex-col items-end">
+          <div class="inline-flex items-center gap-2 bg-kse-darkGreen/80 border border-kse-secondary/50 px-3 py-1.5 rounded-full text-xs font-medium text-kse-secondary shadow-inner">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="currentDateLabel" class="capitalize font-semibold text-white">Memuat...</span>
+          </div>
+          <span id="liveClock" class="text-xs text-gray-200 mt-1 font-mono tracking-widest font-semibold">00:00:00 WIB</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+
+    <!-- Information & Stats Banner -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <!-- Card Status Hari Ini -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center space-x-4 relative overflow-hidden">
+        <div class="absolute -right-3 -bottom-3 text-gray-100 text-6xl pointer-events-none">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-kse-softGreen text-kse-primary flex items-center justify-center text-xl font-bold">
+          <i class="fa-regular fa-calendar-check"></i>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Hari Berjalan</p>
+          <h3 id="activeDayText" class="text-2xl font-black text-kse-primary font-spartan">-</h3>
+        </div>
+      </div>
+
+      <!-- Card Total Beswan -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center space-x-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-xl bg-amber-50 text-kse-secondary flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Total Beswan</p>
+          <h3 id="totalBeswanCount" class="text-2xl font-black text-gray-800 font-spartan">56</h3>
+        </div>
+      </div>
+
+      <!-- Card Bertugas Hari Ini -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-kse-primary/20 bg-gradient-to-br from-white to-[#FAF7CC]/40 flex items-center space-x-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-xl bg-kse-primary text-white flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-clipboard-user"></i>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-kse-earth font-semibold">Jadwal Piket Hari Ini</p>
+          <h3 id="piketTodayCount" class="text-2xl font-black text-kse-primary font-spartan">0</h3>
+        </div>
+      </div>
+
+      <!-- Card Sudah Hadir Hari Ini -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100 flex items-center space-x-4 relative overflow-hidden">
+        <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Hadir (Selesai)</p>
+          <h3 id="completedAttendanceCount" class="text-2xl font-black text-emerald-700 font-spartan">0</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200/80 flex flex-col md:flex-row items-center justify-between gap-4">
+      <!-- Search Input -->
+      <div class="relative w-full md:w-96">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Cari nama beswan atau divisi..."
+          class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-kse-primary/40 focus:border-kse-primary transition text-sm text-gray-800 placeholder-gray-400 shadow-sm"
+        />
+        <button id="clearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Filter Buttons -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+        <button
+          onclick="setFilter('semua')"
+          id="btnFilterSemua"
+          class="filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-sm"
+        >
+          Semua (56)
+        </button>
+        <button
+          onclick="setFilter('hari_ini')"
+          id="btnFilterHariIni"
+          class="filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
+        >
+          ⭐ Piket Hari Ini
+        </button>
+        <button
+          onclick="setFilter('aktif')"
+          id="btnFilterAktif"
+          class="filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
+        >
+          ⏳ Berlangsung
+        </button>
+        <button
+          onclick="setFilter('hadir')"
+          id="btnFilterHadir"
+          class="filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
+        >
+          ✅ Selesai
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert / Toast Banner -->
+    <div id="toastNotification" class="hidden transform transition-all duration-300 ease-out bg-kse-primary text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-kse-secondary text-lg"></i>
+        <p id="toastMessage" class="text-sm font-medium">Notifikasi</p>
+      </div>
+      <button onclick="hideToast()" class="text-white/70 hover:text-white ml-4">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- ================= BESWAN LIST SECTION ================= -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <!-- Desktop & Tablet Table View -->
+      <div class="hidden md:block overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-kse-primary text-white text-xs uppercase tracking-wider font-spartan">
+              <th class="py-4 px-6 font-bold w-16 text-center">No</th>
+              <th class="py-4 px-6 font-bold">Nama Beswan</th>
+              <th class="py-4 px-6 font-bold">Divisi</th>
+              <th class="py-4 px-6 font-bold text-center">Jadwal Piket</th>
+              <th class="py-4 px-6 font-bold text-center w-48">Status Presensi</th>
+              <th class="py-4 px-6 font-bold text-center w-56">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="beswanTableBody" class="divide-y divide-gray-100 text-sm">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card List View -->
+      <div id="beswanMobileList" class="md:hidden divide-y divide-gray-100 p-3 space-y-3">
+        <!-- Populated via JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden py-16 text-center">
+        <div class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+          <i class="fa-solid fa-user-slash"></i>
+        </div>
+        <h4 class="text-lg font-bold text-gray-700 font-spartan">Beswan Tidak Ditemukan</h4>
+        <p class="text-sm text-gray-500 max-w-sm mx-auto mt-1">Coba sesuaikan kata kunci pencarian atau ubah filter status yang aktif.</p>
+      </div>
+    </div>
+
+    <!-- System Info & Notes Footer -->
+    <div class="bg-kse-softGreen/50 border border-kse-primary/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-gray-600">
+      <div class="flex items-center space-x-3">
+        <span class="text-kse-primary text-xl">
+          <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div>
+          <strong class="text-kse-primary font-semibold">Aturan Piket Sekretariat:</strong>
+          Hitung mundur berdurasi 60 menit. Presensi sah dan terkirim otomatis ke Google Sheets ketika beswan berada di sekretariat hingga timer selesai (00:00).
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-auto text-gray-400 text-[11px]">
+        <i class="fa-solid fa-database"></i> Auto-saved LocalStorage
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 text-xs mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-kse-secondary"></span>
+        <p class="font-medium text-gray-300">
+          Paguyuban Karya Salemba Empat Universitas Riau (KSE UNRI)
+        </p>
+      </div>
+      <div class="text-center sm:text-right text-gray-500">
+        Platform Presensi Piket Mandiri &bull; GitHub Pages Edition
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    /* =========================================================================
+       1. KONFIGURASI GOOGLE APPS SCRIPT WEB APP URL
+       Ganti dengan Deployment URL Web App Google Sheets Anda setelah di-deploy.
+       ========================================================================= */
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq6EKtif8TXtt8Swu6cWXXQrk7IUH7VjP4AUt2uh684eQc9QDS1rBkXVduOU9X-jVe/exec";
+
+    // Durasi Countdown Piket (60 Menit = 3600 Detik)
+    const COUNTDOWN_DURATION_SECONDS = 3600;
+
+    /* =========================================================================
+       2. MASTER DATA BESWAN KSE UNRI (56 Anggota)
+       ========================================================================= */
+    const BESWAN_DATA = [
+      {"id":1,"nama":"Ilham Radhifa","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":2,"nama":"Fernando Situmorang","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":3,"nama":"Raissa Nabila Putri Riski","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":4,"nama":"Ainesis Siringo Ringo","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":5,"nama":"Renna Mailina","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":6,"nama":"Muhammad Renaldy Saputra","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":7,"nama":"Najwa Syafiqah","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":8,"nama":"Hameezah","divisi":"Badan Pengurus Harian (BPH)","hari_piket":"Senin"},
+      {"id":9,"nama":"Halya Febriani","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":10,"nama":"Adelia","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":11,"nama":"Citra Melamedika","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":12,"nama":"Azizah Zahra Nurwani","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":13,"nama":"Mufidli Halim","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":14,"nama":"Deno Rangga Alif","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":15,"nama":"Sarah Filia Hutasoit","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":16,"nama":"Hanna Rida Yolavani Pandiangan","divisi":"Pendidikan dan Pelatihan (DIKLAT)","hari_piket":"Selasa"},
+      {"id":17,"nama":"Salsa Nabila Zahira","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":18,"nama":"Ghinna Faadhilah Husni","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":19,"nama":"Novia Putri Tiefi","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":20,"nama":"Ade Gheriya Rahima Br. Pasaribu","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":21,"nama":"Dzakira Syarqiya","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":22,"nama":"Muhammad Jadid Ghifari","divisi":"Komunikasi dan Informasi (KOMINFO)","hari_piket":"Rabu"},
+      {"id":23,"nama":"Rahmah Azzahra","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Rabu"},
+      {"id":24,"nama":"Regina Wulandari","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Rabu"},
+      {"id":25,"nama":"Lili","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":26,"nama":"Herma Desviona","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":27,"nama":"Odelia Rejoice Moranda Sibuea","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":28,"nama":"Rian Setiawan","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":29,"nama":"Maulya Luthfiana Fathny","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":30,"nama":"Zulkifli Boy Simatupang","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":31,"nama":"Muhammad Erwa Sandyka","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":32,"nama":"Mitraturahmah","divisi":"Rumah Gurindam (RAGAM)","hari_piket":"Kamis"},
+      {"id":33,"nama":"Jannati Zerlina","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":34,"nama":"Annisa Nurul Ramadhani","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":35,"nama":"Sisca Rahma Alya","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":36,"nama":"Thalita Anindya Ahnaf","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":37,"nama":"Yusri Arya Pratama","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":38,"nama":"Faris Alphard","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":39,"nama":"Hikmah Syahrini","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":40,"nama":"Alysa Pardalana Febia","divisi":"Ekonomi, Bisnis, dan Partnership (EKOBIS)","hari_piket":"Jumat"},
+      {"id":41,"nama":"Verronica Allysia Tampubolon","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":42,"nama":"Tengku Risya Dwi Julietha","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":43,"nama":"Naufal Labib Ramadhani","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":44,"nama":"Hadelia Clara","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":45,"nama":"Siti Tri Nopianti","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":46,"nama":"Sabda Yohana Harita","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":47,"nama":"Fadhila Fahtur Rahman","divisi":"Community Development (COMDEV)","hari_piket":"Sabtu"},
+      {"id":48,"nama":"Miranda Sinaga","divisi":"Internal Relation (IR)","hari_piket":"Sabtu"},
+      {"id":49,"nama":"Fanny Marissa Putri","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":50,"nama":"Yunika Nuuru Afriza","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":51,"nama":"Hana Revalina Situmorang","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":52,"nama":"Neldia Zamriati","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":53,"nama":"Febriani","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":54,"nama":"Arinil Haqqoh","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":55,"nama":"Fathin Ahmad Zidan","divisi":"Internal Relation (IR)","hari_piket":"Minggu"},
+      {"id":56,"nama":"Jose Earl Parulian Manurung","divisi":"Internal Relation (IR)","hari_piket":"Minggu"}
+    ];
+
+    const HARI_MAP = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const BULAN_MAP = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    /* =========================================================================
+       3. STATE MANAGEMENT & LOCAL STORAGE
+       ========================================================================= */
+    let currentFilter = 'semua';
+    let searchQuery = '';
+    let timerInterval = null;
+
+    function getTodayDateKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getStorageKey() {
+      return `kse_piket_${getTodayDateKey()}`;
+    }
+
+    function getAttendanceState() {
+      try {
+        const data = localStorage.getItem(getStorageKey());
+        return data ? JSON.parse(data) : {};
+      } catch (err) {
+        console.error("Gagal membaca LocalStorage:", err);
+        return {};
+      }
+    }
+
+    function saveAttendanceState(state) {
+      try {
+        localStorage.setItem(getStorageKey(), JSON.stringify(state));
+      } catch (err) {
+        console.error("Gagal menyimpan ke LocalStorage:", err);
+      }
+    }
+
+    /* =========================================================================
+       4. INITIALIZATION & LIVE CLOCK
+       ========================================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      initClockAndDates();
+      renderApp();
+      setupSearch();
+      startLiveTicker();
+    });
+
+    function getTodayHariName() {
+      return HARI_MAP[new Date().getDay()];
+    }
+
+    function initClockAndDates() {
+      const now = new Date();
+      const hariName = HARI_MAP[now.getDay()];
+      const tgl = now.getDate();
+      const bln = BULAN_MAP[now.getMonth()];
+      const thn = now.getFullYear();
+
+      document.getElementById('currentDateLabel').textContent = `${hariName}, ${tgl} ${bln} ${thn}`;
+      document.getElementById('activeDayText').textContent = hariName;
+      document.getElementById('totalBeswanCount').textContent = BESWAN_DATA.length;
+
+      setInterval(() => {
+        const timeNow = new Date();
+        const hh = String(timeNow.getHours()).padStart(2, '0');
+        const mm = String(timeNow.getMinutes()).padStart(2, '0');
+        const ss = String(timeNow.getSeconds()).padStart(2, '0');
+        document.getElementById('liveClock').textContent = `${hh}:${mm}:${ss} WIB`;
+      }, 1000);
+    }
+
+    /* =========================================================================
+       5. CORE ACTION: ABSEN MASUK, BATALKAN, & FINISH COUNTDOWN
+       ========================================================================= */
+    function mulaiAbsen(id) {
+      const beswan = BESWAN_DATA.find(b => b.id === id);
+      if (!beswan) return;
+
+      const state = getAttendanceState();
+      const now = new Date();
+
+      state[id] = {
+        status: 'countdown',
+        startTime: now.getTime(),
+        targetEndTime: now.getTime() + (COUNTDOWN_DURATION_SECONDS * 1000),
+        jamMasuk: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        tanggal: getTodayDateKey(),
+        synced: false
+      };
+
+      saveAttendanceState(state);
+      showToast(`Presensi dimulai untuk ${beswan.nama}. Timer 60 menit berjalan.`, 'info');
+      renderApp();
+    }
+
+    function batalkanAbsen(id) {
+      const beswan = BESWAN_DATA.find(b => b.id === id);
+      const nama = beswan ? beswan.nama : 'Beswan';
+
+      if (!confirm(`Yakin ingin membatalkan presensi untuk ${nama}?`)) {
+        return;
+      }
+
+      const state = getAttendanceState();
+      if (state[id]) {
+        delete state[id];
+        saveAttendanceState(state);
+      }
+
+      showToast(`Presensi untuk ${nama} telah dibatalkan.`, 'warning');
+      renderApp();
+    }
+
+    function selesaikanAbsen(id) {
+      const state = getAttendanceState();
+      const record = state[id];
+      const beswan = BESWAN_DATA.find(b => b.id === id);
+
+      if (!record || record.status === 'selesai') return;
+
+      const now = new Date();
+      const jamSelesai = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      record.status = 'selesai';
+      record.jamSelesai = jamSelesai;
+      record.synced = false;
+      saveAttendanceState(state);
+
+      renderApp();
+      showToast(`Selamat! ${beswan.nama} sah piket selama 1 jam penuh. Sinkronisasi data...`, 'success');
+
+      syncToGoogleSheets(beswan, record);
+    }
+
+    /* =========================================================================
+       6. SYNC TO GOOGLE SHEETS VIA GOOGLE APPS SCRIPT
+       ========================================================================= */
+    async function syncToGoogleSheets(beswan, record) {
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "ISI_URL_WEB_APP_DISINI") {
+        console.warn("URL Google Apps Script belum dikonfigurasi.");
+        showToast(`Tercatat Hadir Lokal: ${beswan.nama}. (Konfigurasi GOOGLE_SCRIPT_URL untuk auto-sync Sheets).`, 'warning');
+        return;
+      }
+
+      const payload = {
+        id: beswan.id,
+        nama: beswan.nama,
+        divisi: beswan.divisi,
+        hari_piket: beswan.hari_piket,
+        tanggal: record.tanggal || getTodayDateKey(),
+        jam_masuk: record.jamMasuk,
+        jam_selesai: record.jamSelesai,
+        status: "Hadir"
+      };
+
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const state = getAttendanceState();
+        if (state[beswan.id]) {
+          state[beswan.id].synced = true;
+          saveAttendanceState(state);
+        }
+        showToast(`Data presensi ${beswan.nama} berhasil disinkronkan ke Google Sheets!`, 'success');
+        renderApp();
+      } catch (error) {
+        console.error("Gagal sinkronisasi Google Sheets:", error);
+        showToast(`Gagal sinkronisasi ke Sheets untuk ${beswan.nama}. Tersimpan di memori browser.`, 'error');
+      }
+    }
+
+    /* =========================================================================
+       7. LIVE TICKER (Timer Loop per Detik)
+       ========================================================================= */
+    function startLiveTicker() {
+      if (timerInterval) clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        const state = getAttendanceState();
+        const now = Date.now();
+
+        Object.keys(state).forEach(id => {
+          const rec = state[id];
+          if (rec && rec.status === 'countdown') {
+            const timeLeftMs = rec.targetEndTime - now;
+            const elementTimer = document.querySelectorAll(`.timer-display-${id}`);
+
+            if (timeLeftMs <= 0) {
+              selesaikanAbsen(parseInt(id, 10));
+            } else {
+              const totalSec = Math.floor(timeLeftMs / 1000);
+              const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+              const s = String(totalSec % 60).padStart(2, '0');
+              const formattedTime = `${m}:${s}`;
+
+              elementTimer.forEach(el => {
+                el.textContent = formattedTime;
+              });
+            }
+          }
+        });
+      }, 1000);
+    }
+
+    /* =========================================================================
+       8. RENDERING UI (Table & Cards)
+       ========================================================================= */
+    function renderApp() {
+      const todayHari = getTodayHariName();
+      const state = getAttendanceState();
+
+      let piketHariIniCount = 0;
+      let completedCount = 0;
+
+      BESWAN_DATA.forEach(b => {
+        if (b.hari_piket.toLowerCase() === todayHari.toLowerCase()) {
+          piketHariIniCount++;
+        }
+        if (state[b.id] && state[b.id].status === 'selesai') {
+          completedCount++;
+        }
+      });
+
+      document.getElementById('piketTodayCount').textContent = piketHariIniCount;
+      document.getElementById('completedAttendanceCount').textContent = completedCount;
+
+      const filtered = BESWAN_DATA.filter(beswan => {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = !q ||
+          beswan.nama.toLowerCase().includes(q) ||
+          beswan.divisi.toLowerCase().includes(q);
+
+        if (!matchesSearch) return false;
+
+        const beswanState = state[beswan.id];
+        const isTodayPiket = beswan.hari_piket.toLowerCase() === todayHari.toLowerCase();
+
+        if (currentFilter === 'hari_ini') return isTodayPiket;
+        if (currentFilter === 'aktif') return beswanState && beswanState.status === 'countdown';
+        if (currentFilter === 'hadir') return beswanState && beswanState.status === 'selesai';
+
+        return true;
+      });
+
+      renderTable(filtered, todayHari, state);
+      renderCards(filtered, todayHari, state);
+
+      const emptyStateEl = document.getElementById('emptyState');
+      if (filtered.length === 0) {
+        emptyStateEl.classList.remove('hidden');
+      } else {
+        emptyStateEl.classList.add('hidden');
+      }
+    }
+
+    function calculateTimeRemaining(targetEndTime) {
+      const diff = targetEndTime - Date.now();
+      if (diff <= 0) return "00:00";
+      const totalSec = Math.floor(diff / 1000);
+      const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+      const s = String(totalSec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function renderTable(data, todayHari, state) {
+      const tbody = document.getElementById('beswanTableBody');
+      tbody.innerHTML = '';
+
+      data.forEach((beswan) => {
+        const isTodayPiket = beswan.hari_piket.toLowerCase() === todayHari.toLowerCase();
+        const rec = state[beswan.id];
+        const status = rec ? rec.status : 'idle';
+
+        const tr = document.createElement('tr');
+        tr.className = `transition-colors duration-150 ${
+          isTodayPiket
+            ? 'bg-[#FAF7CC]/60 hover:bg-[#FAF7CC] border-l-4 border-l-kse-primary'
+            : 'hover:bg-gray-50'
+        }`;
+
+        let statusBadgeHtml = '';
+        let actionBtnHtml = '';
+
+        if (status === 'countdown') {
+          const timeLeft = calculateTimeRemaining(rec.targetEndTime);
+          statusBadgeHtml = `
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 pulse-subtle">
+              <i class="fa-solid fa-hourglass-half text-kse-secondary"></i>
+              <span>Proses (<span class="timer-display-${beswan.id} font-mono">${timeLeft}</span>)</span>
+            </div>
+          `;
+          actionBtnHtml = `
+            <button
+              onclick="batalkanAbsen(${beswan.id})"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 transition shadow-sm"
+              title="Batalkan presensi jika keluar sekretariat sebelum 1 jam"
+            >
+              <i class="fa-solid fa-ban"></i> Batalkan
+            </button>
+          `;
+        } else if (status === 'selesai') {
+          statusBadgeHtml = `
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <i class="fa-solid fa-check-double text-emerald-600"></i>
+              <span>Hadir (${rec.jamMasuk || ''} - ${rec.jamSelesai || ''})</span>
+            </div>
+          `;
+          actionBtnHtml = `
+            <button disabled class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed">
+              <i class="fa-solid fa-lock"></i> Selesai
+            </button>
+          `;
+        } else {
+          statusBadgeHtml = `
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+              <i class="fa-regular fa-circle text-gray-400"></i>
+              <span>Belum Hadir</span>
+            </div>
+          `;
+          actionBtnHtml = `
+            <button
+              onclick="mulaiAbsen(${beswan.id})"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow hover:shadow-md active:scale-95"
+            >
+              <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk
+            </button>
+          `;
+        }
+
+        const hariBadge = isTodayPiket
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-extrabold bg-kse-primary text-white shadow-sm">
+               <i class="fa-solid fa-star text-kse-secondary text-[10px]"></i> ${beswan.hari_piket}
+             </span>`
+          : `<span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+               ${beswan.hari_piket}
+             </span>`;
+
+        tr.innerHTML = `
+          <td class="py-4 px-6 text-center text-xs text-gray-500 font-semibold">${beswan.id}</td>
+          <td class="py-4 px-6">
+            <div class="font-bold text-gray-900 flex items-center gap-2">
+              <span>${beswan.nama}</span>
+              ${isTodayPiket ? '<span class="text-[10px] bg-kse-secondary/20 text-kse-earth px-2 py-0.5 rounded-full font-bold border border-kse-secondary/40">Piket Hari Ini</span>' : ''}
+            </div>
+          </td>
+          <td class="py-4 px-6 text-gray-600 text-xs font-medium">
+            <span class="inline-block max-w-xs truncate" title="${beswan.divisi}">${beswan.divisi}</span>
+          </td>
+          <td class="py-4 px-6 text-center">${hariBadge}</td>
+          <td class="py-4 px-6 text-center">${statusBadgeHtml}</td>
+          <td class="py-4 px-6 text-center">${actionBtnHtml}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderCards(data, todayHari, state) {
+      const container = document.getElementById('beswanMobileList');
+      container.innerHTML = '';
+
+      data.forEach((beswan) => {
+        const isTodayPiket = beswan.hari_piket.toLowerCase() === todayHari.toLowerCase();
+        const rec = state[beswan.id];
+        const status = rec ? rec.status : 'idle';
+
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border transition-all ${
+          isTodayPiket
+            ? 'bg-[#FAF7CC]/80 border-2 border-kse-primary shadow-sm'
+            : 'bg-white border-gray-200'
+        }`;
+
+        let statusBadge = '';
+        let actionBtn = '';
+
+        if (status === 'countdown') {
+          const timeLeft = calculateTimeRemaining(rec.targetEndTime);
+          statusBadge = `
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+              <i class="fa-solid fa-hourglass-half text-kse-secondary"></i>
+              <span class="timer-display-${beswan.id} font-mono">${timeLeft}</span>
+            </span>
+          `;
+          actionBtn = `
+            <button
+              onclick="batalkanAbsen(${beswan.id})"
+              class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 active:bg-rose-100 flex items-center justify-center gap-2"
+            >
+              <i class="fa-solid fa-ban"></i> Batalkan Presensi
+            </button>
+          `;
+        } else if (status === 'selesai') {
+          statusBadge = `
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <i class="fa-solid fa-check text-emerald-600"></i> Hadir
+            </span>
+          `;
+          actionBtn = `
+            <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-check"></i> Selesai (60 Menit)
+            </button>
+          `;
+        } else {
+          statusBadge = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+              Belum Hadir
+            </span>
+          `;
+          actionBtn = `
+            <button
+              onclick="mulaiAbsen(${beswan.id})"
+              class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-kse-primary active:bg-kse-darkGreen flex items-center justify-center gap-2 shadow"
+            >
+              <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk (1 Jam)
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-gray-400">#${beswan.id}</span>
+                <h4 class="text-sm font-bold text-gray-900">${beswan.nama}</h4>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">${beswan.divisi}</p>
+            </div>
+            <div>
+              ${statusBadge}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs py-2 border-t border-gray-100/80 my-2">
+            <span class="text-gray-500 font-medium">Jadwal Piket:</span>
+            ${
+              isTodayPiket
+                ? `<span class="font-extrabold text-kse-primary bg-kse-secondary/30 px-2 py-0.5 rounded flex items-center gap-1 border border-kse-secondary/50">
+                     <i class="fa-solid fa-star text-kse-earth text-[10px]"></i> ${beswan.hari_piket} (Hari Ini)
+                   </span>`
+                : `<span class="font-medium text-gray-700">${beswan.hari_piket}</span>`
+            }
+          </div>
+
+          <div class="mt-2">
+            ${actionBtn}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    /* =========================================================================
+       9. SEARCH & FILTER CONTROLS
+       ========================================================================= */
+    function setupSearch() {
+      const input = document.getElementById('searchInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
+
+      input.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        if (searchQuery.length > 0) {
+          clearBtn.classList.remove('hidden');
+        } else {
+          clearBtn.classList.add('hidden');
+        }
+        renderApp();
+      });
+
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        searchQuery = '';
+        clearBtn.classList.add('hidden');
+        renderApp();
+        input.focus();
+      });
+    }
+
+    function setFilter(filterType) {
+      currentFilter = filterType;
+
+      const filterButtons = {
+        semua: document.getElementById('btnFilterSemua'),
+        hari_ini: document.getElementById('btnFilterHariIni'),
+        aktif: document.getElementById('btnFilterAktif'),
+        hadir: document.getElementById('btnFilterHadir')
+      };
+
+      Object.keys(filterButtons).forEach(key => {
+        const btn = filterButtons[key];
+        if (key === filterType) {
+          btn.className = "filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-sm";
+        } else {
+          btn.className = "filter-pill px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200";
+        }
+      });
+
+      renderApp();
+    }
+
+    /* =========================================================================
+       10. NOTIFICATION / TOAST HELPER
+       ========================================================================= */
+    let toastTimeout = null;
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      const iconEl = document.getElementById('toastIcon');
+
+      msgEl.textContent = message;
+
+      if (type === 'success') {
+        toast.className = "transform transition-all duration-300 ease-out bg-emerald-700 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center justify-between";
+        iconEl.className = "fa-solid fa-circle-check text-white text-lg";
+      } else if (type === 'warning') {
+        toast.className = "transform transition-all duration-300 ease-out bg-amber-600 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center justify-between";
+        iconEl.className = "fa-solid fa-triangle-exclamation text-white text-lg";
+      } else if (type === 'error') {
+        toast.className = "transform transition-all duration-300 ease-out bg-rose-700 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center justify-between";
+        iconEl.className = "fa-solid fa-circle-xmark text-white text-lg";
+      } else {
+        toast.className = "transform transition-all duration-300 ease-out bg-kse-primary text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center justify-between";
+        iconEl.className = "fa-solid fa-circle-info text-kse-secondary text-lg";
+      }
+
+      toast.classList.remove('hidden');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        hideToast();
+      }, 5000);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('toastNotification');
+      toast.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
