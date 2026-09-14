@@ -140,6 +140,13 @@ function closeCancelModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+// Tutup modal via keyboard Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeCancelModal();
+  }
+});
+
 function eksekusiBatalkan() {
   if (!pendingCancelId) return;
 
