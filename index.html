@@ -1,295 +1,419 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistem Absensi Piket Sekretariat - Paguyuban KSE UNRI</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Absensi Piket Sekretariat - Paguyuban KSE UNRI</title>
 
-  <!-- Google Fonts: League Spartan (Header) & Montserrat (Body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon " href="assets/image/icon.svg" />
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            kse: {
-              primary: '#004834',
-              secondary: '#EEB319',
-              highlight: '#FAF7CC',
-              earth: '#6F4E37',
-              earthLight: '#9C7C5A',
-              darkGreen: '#003324',
-              softGreen: '#E6EFE9'
-            }
+    <!-- Google Fonts: League Spartan (Header) & Montserrat (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              kse: {
+                primary: "#004834",
+                secondary: "#EEB319",
+                highlight: "#FAF7CC",
+                earth: "#6F4E37",
+                earthLight: "#9C7C5A",
+                darkGreen: "#003324",
+                softGreen: "#E6EFE9",
+              },
+            },
+            fontFamily: {
+              spartan: ['"League Spartan"', "sans-serif"],
+              montserrat: ['"Montserrat"', "sans-serif"],
+            },
           },
-          fontFamily: {
-            spartan: ['"League Spartan"', 'sans-serif'],
-            montserrat: ['"Montserrat"', 'sans-serif']
-          }
-        }
-      }
-    };
-  </script>
+        },
+      };
+    </script>
 
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Font Awesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
-  <!-- Custom Modular Styles (UI/UX Pro Max Theme KSE UNRI) -->
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body class="min-h-screen flex flex-col selection:bg-kse-secondary selection:text-kse-primary">
-
-  <!-- ================= NAVBAR ================= -->
-  <header class="bg-kse-primary text-white sticky top-0 z-40 border-b-2 border-kse-secondary/70 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 sm:h-18">
-        <!-- Logo & Brand Title -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-kse-secondary">
-            <i class="fa-solid fa-graduation-cap text-lg"></i>
+    <!-- Custom Modular Styles (UI/UX Pro Max Theme KSE UNRI) -->
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body
+    class="min-h-screen flex flex-col selection:bg-kse-secondary selection:text-kse-primary"
+  >
+    <!-- ================= NAVBAR ================= -->
+    <header
+      class="bg-kse-primary text-white sticky top-0 z-40 border-b-2 border-kse-secondary/70 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16 sm:h-18">
+          <!-- Logo & Brand Title -->
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-kse-secondary"
+            >
+              <i class="fa-solid fa-graduation-cap text-lg"></i>
+            </div>
+            <div>
+              <h1
+                class="text-base sm:text-lg font-bold tracking-tight uppercase leading-tight font-spartan text-white"
+              >
+                Paguyuban KSE UNRI
+              </h1>
+              <p
+                class="text-[11px] sm:text-xs text-gray-300 font-medium tracking-wide"
+              >
+                Sistem Presensi Piket Sekretariat
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 class="text-base sm:text-lg font-bold tracking-tight uppercase leading-tight font-spartan text-white">
-              Paguyuban KSE UNRI
-            </h1>
-            <p class="text-[11px] sm:text-xs text-gray-300 font-medium tracking-wide">
-              Sistem Presensi Piket Sekretariat
-            </p>
+
+          <!-- Live Clock & Today's Indicator (Clean & Professional) -->
+          <div class="flex items-center gap-3">
+            <div class="hidden sm:flex flex-col text-right">
+              <span
+                id="currentDateLabel"
+                class="text-xs font-semibold text-gray-200"
+                >Memuat...</span
+              >
+              <span
+                id="liveClock"
+                class="text-[11px] text-kse-secondary font-mono tracking-wider font-semibold"
+                >00:00:00 WIB</span
+              >
+            </div>
+            <div class="sm:hidden text-right">
+              <span
+                id="liveClockMobile"
+                class="text-xs text-kse-secondary font-mono font-semibold"
+                >00:00 WIB</span
+              >
+            </div>
           </div>
         </div>
+      </div>
+    </header>
 
-        <!-- Live Clock & Today's Indicator (Clean & Professional) -->
-        <div class="flex items-center gap-3">
-          <div class="hidden sm:flex flex-col text-right">
-            <span id="currentDateLabel" class="text-xs font-semibold text-gray-200">Memuat...</span>
-            <span id="liveClock" class="text-[11px] text-kse-secondary font-mono tracking-wider font-semibold">00:00:00 WIB</span>
+    <!-- ================= MAIN CONTAINER ================= -->
+    <main
+      class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
+    >
+      <!-- Stat Metrics (Clean Structured Cards) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Card Status Hari Ini -->
+        <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between text-gray-500 mb-1">
+            <span class="text-[11px] font-semibold uppercase tracking-wider"
+              >Hari Berjalan</span
+            >
+            <i class="fa-regular fa-calendar text-gray-400 text-xs"></i>
           </div>
-          <div class="sm:hidden text-right">
-            <span id="liveClockMobile" class="text-xs text-kse-secondary font-mono font-semibold">00:00 WIB</span>
+          <h3
+            id="activeDayText"
+            class="text-xl sm:text-2xl font-bold text-kse-primary font-spartan"
+          >
+            -
+          </h3>
+        </div>
+
+        <!-- Card Total Beswan -->
+        <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between text-gray-500 mb-1">
+            <span class="text-[11px] font-semibold uppercase tracking-wider"
+              >Total Beswan</span
+            >
+            <i class="fa-solid fa-users text-gray-400 text-xs"></i>
           </div>
+          <h3
+            id="totalBeswanCount"
+            class="text-xl sm:text-2xl font-bold text-gray-800 font-spartan"
+          >
+            56
+          </h3>
         </div>
-      </div>
-    </div>
-  </header>
 
-  <!-- ================= MAIN CONTAINER ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
-
-    <!-- Stat Metrics (Clean Structured Cards) -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-      <!-- Card Status Hari Ini -->
-      <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-        <div class="flex items-center justify-between text-gray-500 mb-1">
-          <span class="text-[11px] font-semibold uppercase tracking-wider">Hari Berjalan</span>
-          <i class="fa-regular fa-calendar text-gray-400 text-xs"></i>
-        </div>
-        <h3 id="activeDayText" class="text-xl sm:text-2xl font-bold text-kse-primary font-spartan">-</h3>
-      </div>
-
-      <!-- Card Total Beswan -->
-      <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-        <div class="flex items-center justify-between text-gray-500 mb-1">
-          <span class="text-[11px] font-semibold uppercase tracking-wider">Total Beswan</span>
-          <i class="fa-solid fa-users text-gray-400 text-xs"></i>
-        </div>
-        <h3 id="totalBeswanCount" class="text-xl sm:text-2xl font-bold text-gray-800 font-spartan">56</h3>
-      </div>
-
-      <!-- Card Bertugas Hari Ini -->
-      <div class="bg-white rounded-lg p-4 border border-emerald-100 bg-[#FAF7CC]/30 shadow-sm">
-        <div class="flex items-center justify-between text-kse-earth mb-1">
-          <span class="text-[11px] font-semibold uppercase tracking-wider">Piket Hari Ini</span>
-          <i class="fa-solid fa-clipboard-user text-kse-primary text-xs"></i>
-        </div>
-        <h3 id="piketTodayCount" class="text-xl sm:text-2xl font-bold text-kse-primary font-spartan">0</h3>
-      </div>
-
-      <!-- Card Sudah Hadir Hari Ini -->
-      <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-        <div class="flex items-center justify-between text-gray-500 mb-1">
-          <span class="text-[11px] font-semibold uppercase tracking-wider">Telah Hadir (60m)</span>
-          <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
-        </div>
-        <h3 id="completedAttendanceCount" class="text-xl sm:text-2xl font-bold text-emerald-700 font-spartan">0</h3>
-      </div>
-    </div>
-
-    <!-- Filter & Search Controls (Structured & Clean) -->
-    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-      <!-- Search Input -->
-      <div class="relative w-full md:w-80">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-xs">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Cari nama beswan atau divisi..."
-          class="w-full pl-9 pr-8 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-kse-primary focus:border-kse-primary transition text-xs text-gray-800 placeholder-gray-400"
-        />
-        <button id="clearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600">
-          <i class="fa-solid fa-xmark text-xs"></i>
-        </button>
-      </div>
-
-      <!-- Quick Filter Buttons (Ganti Emoji dengan Ikon FontAwesome yang Senada) -->
-      <div class="flex flex-wrap items-center gap-1.5 justify-start md:justify-end">
-        <button
-          onclick="setFilter('semua')"
-          id="btnFilterSemua"
-          class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-xs"
+        <!-- Card Bertugas Hari Ini -->
+        <div
+          class="bg-white rounded-lg p-4 border border-emerald-100 bg-[#FAF7CC]/30 shadow-sm"
         >
-          Semua (56)
-        </button>
-        <button
-          onclick="setFilter('hari_ini')"
-          id="btnFilterHariIni"
-          class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
-        >
-          <i class="fa-regular fa-star text-kse-secondary"></i> Piket Hari Ini
-        </button>
-        <button
-          onclick="setFilter('aktif')"
-          id="btnFilterAktif"
-          class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
-        >
-          <i class="fa-regular fa-clock text-amber-600"></i> Berlangsung
-        </button>
-        <button
-          onclick="setFilter('hadir')"
-          id="btnFilterHadir"
-          class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
-        >
-          <i class="fa-regular fa-circle-check text-emerald-600"></i> Selesai
-        </button>
-      </div>
-    </div>
-
-    <!-- Alert / Toast Banner -->
-    <div id="toastNotification" class="hidden transform transition-all duration-200 ease-out bg-kse-primary text-white px-4 py-3 rounded-md shadow-md flex items-center justify-between text-xs">
-      <div class="flex items-center space-x-2.5">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-kse-secondary"></i>
-        <p id="toastMessage" class="font-medium">Notifikasi</p>
-      </div>
-      <button onclick="hideToast()" class="text-white/70 hover:text-white ml-4">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- ================= BESWAN LIST SECTION ================= -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <!-- Desktop & Tablet Table View (table-fixed dengan lebar pasti tiap kolom) -->
-      <div class="hidden md:block overflow-x-auto custom-scrollbar">
-        <table class="table-fixed-kse w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-kse-primary text-white text-xs uppercase tracking-wider font-spartan">
-              <th class="py-3 px-4 font-bold text-center w-14">No</th>
-              <th class="py-3 px-4 font-bold w-64 lg:w-72">Nama Beswan</th>
-              <th class="py-3 px-4 font-bold w-60 lg:w-72">Divisi</th>
-              <th class="py-3 px-4 font-bold text-center w-36">Jadwal Piket</th>
-              <th class="py-3 px-4 font-bold text-center w-52">Status Presensi</th>
-              <th class="py-3 px-4 font-bold text-center w-36">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="beswanTableBody" class="divide-y divide-gray-200 text-xs">
-            <!-- Populated via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Mobile Card List View -->
-      <div id="beswanMobileList" class="md:hidden divide-y divide-gray-100 p-3 space-y-2.5">
-        <!-- Populated via JavaScript -->
-      </div>
-
-      <!-- Empty State -->
-      <div id="emptyState" class="hidden py-12 text-center">
-        <div class="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
-          <i class="fa-solid fa-user-slash"></i>
+          <div class="flex items-center justify-between text-kse-earth mb-1">
+            <span class="text-[11px] font-semibold uppercase tracking-wider"
+              >Piket Hari Ini</span
+            >
+            <i class="fa-solid fa-clipboard-user text-kse-primary text-xs"></i>
+          </div>
+          <h3
+            id="piketTodayCount"
+            class="text-xl sm:text-2xl font-bold text-kse-primary font-spartan"
+          >
+            0
+          </h3>
         </div>
-        <h4 class="text-sm font-bold text-gray-700 font-spartan">Beswan Tidak Ditemukan</h4>
-        <p class="text-xs text-gray-500 max-w-sm mx-auto mt-0.5">Coba sesuaikan kata kunci pencarian atau ubah filter status yang aktif.</p>
-      </div>
-    </div>
 
-    <!-- System Info & Notes Footer -->
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-600">
-      <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-circle-info text-kse-primary text-sm"></i>
-        <div>
-          <strong class="text-gray-800 font-semibold">Aturan Piket Sekretariat:</strong>
-          Hitung mundur berdurasi 60 menit. Presensi sah dan terkirim ke Google Sheets ketika beswan berada di sekretariat hingga waktu selesai.
+        <!-- Card Sudah Hadir Hari Ini -->
+        <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+          <div class="flex items-center justify-between text-gray-500 mb-1">
+            <span class="text-[11px] font-semibold uppercase tracking-wider"
+              >Telah Hadir (60m)</span
+            >
+            <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
+          </div>
+          <h3
+            id="completedAttendanceCount"
+            class="text-xl sm:text-2xl font-bold text-emerald-700 font-spartan"
+          >
+            0
+          </h3>
         </div>
       </div>
-      <div class="flex items-center gap-1.5 text-gray-400 text-[11px] shrink-0">
-        <i class="fa-solid fa-database"></i> Auto-saved LocalStorage
-      </div>
-    </div>
 
-  </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 text-xs mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center space-x-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-kse-secondary"></span>
-        <p class="font-medium text-gray-300">
-          Paguyuban Karya Salemba Empat Universitas Riau (KSE UNRI)
-        </p>
-      </div>
-      <div class="text-center sm:text-right text-gray-500">
-        Platform Presensi Piket Mandiri &bull; GitHub Pages Edition
-      </div>
-    </div>
-  </footer>
-
-  <!-- ================= MODAL KONFIRMASI PEMBATALAN (Pusat Layar + Backdrop Gelap Penuh) ================= -->
-  <div id="cancelConfirmModal" class="hidden modal-backdrop-overlay flex items-center justify-center p-4">
-    <!-- Click outside to cancel helper -->
-    <div class="absolute inset-0" onclick="closeCancelModal()"></div>
-
-    <!-- Modal Dialog Card -->
-    <div class="relative bg-white rounded-lg max-w-md w-full p-6 border border-gray-200 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-start space-x-3.5">
-        <div class="w-10 h-10 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
-          <i class="fa-solid fa-triangle-exclamation text-base"></i>
+      <!-- Filter & Search Controls (Structured & Clean) -->
+      <div
+        class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3"
+      >
+        <!-- Search Input -->
+        <div class="relative w-full md:w-80">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-xs"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Cari nama beswan atau divisi..."
+            class="w-full pl-9 pr-8 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-kse-primary focus:border-kse-primary transition text-xs text-gray-800 placeholder-gray-400"
+          />
+          <button
+            id="clearSearchBtn"
+            class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
         </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-sm sm:text-base font-bold text-gray-900 font-spartan">Batalkan Presensi?</h4>
-          <p id="cancelModalDesc" class="text-xs text-gray-600 mt-1.5 leading-relaxed">
-            Apakah Anda yakin ingin membatalkan presensi untuk beswan ini? Timer akan dihentikan dan di-reset.
+
+        <!-- Quick Filter Buttons (Ganti Emoji dengan Ikon FontAwesome yang Senada) -->
+        <div
+          class="flex flex-wrap items-center gap-1.5 justify-start md:justify-end"
+        >
+          <button
+            onclick="setFilter('semua')"
+            id="btnFilterSemua"
+            class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-kse-primary text-white border-kse-primary shadow-xs"
+          >
+            Semua (56)
+          </button>
+          <button
+            onclick="setFilter('hari_ini')"
+            id="btnFilterHariIni"
+            class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
+          >
+            <i class="fa-regular fa-star text-kse-secondary"></i> Piket Hari Ini
+          </button>
+          <button
+            onclick="setFilter('aktif')"
+            id="btnFilterAktif"
+            class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
+          >
+            <i class="fa-regular fa-clock text-amber-600"></i> Berlangsung
+          </button>
+          <button
+            onclick="setFilter('hadir')"
+            id="btnFilterHadir"
+            class="filter-pill px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition border bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300 flex items-center gap-1.5"
+          >
+            <i class="fa-regular fa-circle-check text-emerald-600"></i> Selesai
+          </button>
+        </div>
+      </div>
+
+      <!-- Alert / Toast Banner -->
+      <div
+        id="toastNotification"
+        class="hidden transform transition-all duration-200 ease-out bg-kse-primary text-white px-4 py-3 rounded-md shadow-md flex items-center justify-between text-xs"
+      >
+        <div class="flex items-center space-x-2.5">
+          <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check text-kse-secondary"
+          ></i>
+          <p id="toastMessage" class="font-medium">Notifikasi</p>
+        </div>
+        <button
+          onclick="hideToast()"
+          class="text-white/70 hover:text-white ml-4"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- ================= BESWAN LIST SECTION ================= -->
+      <div
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <!-- Desktop & Tablet Table View (table-fixed dengan lebar pasti tiap kolom) -->
+        <div class="hidden md:block overflow-x-auto custom-scrollbar">
+          <table class="table-fixed-kse w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="bg-kse-primary text-white text-xs uppercase tracking-wider font-spartan"
+              >
+                <th class="py-3 px-4 font-bold text-center w-14">No</th>
+                <th class="py-3 px-4 font-bold w-64 lg:w-72">Nama Beswan</th>
+                <th class="py-3 px-4 font-bold w-60 lg:w-72">Divisi</th>
+                <th class="py-3 px-4 font-bold text-center w-36">
+                  Jadwal Piket
+                </th>
+                <th class="py-3 px-4 font-bold text-center w-52">
+                  Status Presensi
+                </th>
+                <th class="py-3 px-4 font-bold text-center w-36">Aksi</th>
+              </tr>
+            </thead>
+            <tbody
+              id="beswanTableBody"
+              class="divide-y divide-gray-200 text-xs"
+            >
+              <!-- Populated via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Card List View -->
+        <div id="beswanMobileList" class="md:hidden p-3 sm:p-4 space-y-3">
+          <!-- Populated via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden py-12 text-center">
+          <div
+            class="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"
+          >
+            <i class="fa-solid fa-user-slash"></i>
+          </div>
+          <h4 class="text-sm font-bold text-gray-700 font-spartan">
+            Beswan Tidak Ditemukan
+          </h4>
+          <p class="text-xs text-gray-500 max-w-sm mx-auto mt-0.5">
+            Coba sesuaikan kata kunci pencarian atau ubah filter status yang
+            aktif.
           </p>
         </div>
       </div>
-      <div class="mt-5 flex items-center justify-end space-x-2.5 pt-3 border-t border-gray-100">
-        <button
-          type="button"
-          onclick="closeCancelModal()"
-          class="px-3.5 py-2 rounded-md text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 transition"
+
+      <!-- System Info & Notes Footer -->
+      <div
+        class="bg-gray-50 border border-gray-200 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-600"
+      >
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-circle-info text-kse-primary text-sm"></i>
+          <div>
+            <strong class="text-gray-800 font-semibold"
+              >Aturan Piket Sekretariat:</strong
+            >
+            Hitung mundur berdurasi 60 menit. Presensi sah dan terkirim ke
+            Google Sheets ketika beswan berada di sekretariat hingga waktu
+            selesai.
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-1.5 text-gray-400 text-[11px] shrink-0"
         >
-          Kembali
-        </button>
-        <button
-          type="button"
-          id="confirmCancelActionBtn"
-          class="px-4 py-2 rounded-md text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition shadow-sm"
+          <i class="fa-solid fa-database"></i> Auto-saved LocalStorage
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer
+      class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 text-xs mt-auto"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4"
+      >
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-kse-secondary"></span>
+          <p class="font-medium text-gray-300">
+            Paguyuban Karya Salemba Empat Universitas Riau (KSE UNRI)
+          </p>
+        </div>
+        <div class="text-center sm:text-right text-gray-500">
+          Platform Presensi Piket Mandiri &bull; GitHub Pages Edition
+        </div>
+      </div>
+    </footer>
+
+    <!-- ================= MODAL KONFIRMASI PEMBATALAN (Pusat Layar + Backdrop Gelap Penuh) ================= -->
+    <div
+      id="cancelConfirmModal"
+      class="hidden modal-backdrop-overlay flex items-center justify-center p-4"
+    >
+      <!-- Click outside to cancel helper -->
+      <div class="absolute inset-0" onclick="closeCancelModal()"></div>
+
+      <!-- Modal Dialog Card -->
+      <div
+        class="relative bg-white rounded-lg max-w-md w-full p-6 border border-gray-200 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150"
+      >
+        <div class="flex items-start space-x-3.5">
+          <div
+            class="w-10 h-10 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0"
+          >
+            <i class="fa-solid fa-triangle-exclamation text-base"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4
+              class="text-sm sm:text-base font-bold text-gray-900 font-spartan"
+            >
+              Batalkan Presensi?
+            </h4>
+            <p
+              id="cancelModalDesc"
+              class="text-xs text-gray-600 mt-1.5 leading-relaxed"
+            >
+              Apakah Anda yakin ingin membatalkan presensi untuk beswan ini?
+              Timer akan dihentikan dan di-reset.
+            </p>
+          </div>
+        </div>
+        <div
+          class="mt-5 flex items-center justify-end space-x-2.5 pt-3 border-t border-gray-100"
         >
-          Ya, Batalkan
-        </button>
+          <button
+            type="button"
+            onclick="closeCancelModal()"
+            class="px-3.5 py-2 rounded-md text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 transition"
+          >
+            Kembali
+          </button>
+          <button
+            type="button"
+            id="confirmCancelActionBtn"
+            class="px-4 py-2 rounded-md text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition shadow-sm"
+          >
+            Ya, Batalkan
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 1. Konfigurasi Endpoint & Parameter -->
-  <script src="js/config.js"></script>
-  <!-- 2. Master Data Beswan KSE UNRI -->
-  <script src="js/data/beswan.js"></script>
-  <!-- 3. Core Engine & State Management Presensi -->
-  <script src="js/app.js"></script>
-</body>
+    <!-- 1. Konfigurasi Endpoint & Parameter -->
+    <script src="js/config.js"></script>
+    <!-- 2. Master Data Beswan KSE UNRI -->
+    <script src="js/data/beswan.js"></script>
+    <!-- 3. Core Engine & State Management Presensi -->
+    <script src="js/app.js"></script>
+  </body>
 </html>

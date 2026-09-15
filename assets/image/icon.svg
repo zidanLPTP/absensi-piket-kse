@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="kseBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#004834" />
+      <stop offset="100%" stop-color="#002b1f" />
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="kseGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD043" />
+      <stop offset="100%" stop-color="#EEB319" />
+    </linearGradient>
+
+    <!-- Soft Inner Shadow -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity="0.25" flood-color="#000" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Container (Cocok untuk App Icon & Favicon) -->
+  <rect width="512" height="512" rx="112" fill="url(#kseBgGrad)" />
+  
+  <!-- Subtle Border Highlight -->
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#EEB319" stroke-width="4" stroke-opacity="0.35" />
+
+  <g filter="url(#softShadow)">
+    <!-- Siluet Atap Sekretariat / Rumah Paguyuban -->
+    <path d="M120 250 L256 142 L392 250" fill="none" stroke="#FAF7CC" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Dinding Sekretariat -->
+    <path d="M162 240 V380 C162 390 170 398 180 398 H332 C342 398 350 390 350 380 V240" fill="none" stroke="#FAF7CC" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85" />
+
+    <!-- Daun / Tunas Pohon Hijau (Identitas Kabinet KSE UNRI) -->
+    <!-- Daun Tengah (Tinggi) -->
+    <path d="M256 168 C242 205 244 240 256 260 C268 240 270 205 256 168 Z" fill="url(#kseGoldGrad)" />
+    
+    <!-- Daun Kiri -->
+    <path d="M234 195 C215 215 212 242 228 258 C240 252 245 235 244 218 Z" fill="#78C679" />
+    
+    <!-- Daun Kanan -->
+    <path d="M278 195 C297 215 300 242 284 258 C272 252 267 235 268 218 Z" fill="#78C679" />
+
+    <!-- Lingkaran Jam Presensi Piket (Dial) -->
+    <circle cx="256" cy="336" r="62" fill="#003929" stroke="url(#kseGoldGrad)" stroke-width="12" />
+
+    <!-- Jarum Jam (Menandakan Durasi Waktu 1 Jam / Presensi Berjalan) -->
+    <!-- Jarum Menit (Arah Jam 12) -->
+    <line x1="256" y1="336" x2="256" y2="294" stroke="#FAF7CC" stroke-width="8" stroke-linecap="round" />
+    <!-- Jarum Jam (Arah Jam 3) -->
+    <line x1="256" y1="336" x2="284" y2="336" stroke="url(#kseGoldGrad)" stroke-width="8" stroke-linecap="round" />
+    <!-- Titik Poros Tengah -->
+    <circle cx="256" cy="336" r="6" fill="#EEB319" />
+  </g>
+
+  <!-- Indikator Checkmark / Kehadiran Sah (Kecil Elegan di Sudut Kanan Jam) -->
+  <circle cx="316" cy="378" r="20" fill="#22C55E" stroke="#004834" stroke-width="5" />
+  <path d="M308 378 L314 384 L326 372" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

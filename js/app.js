@@ -203,7 +203,8 @@ async function syncToGoogleSheets(beswan, record) {
     id: beswan.id,
     nama: beswan.nama,
     divisi: beswan.divisi,
-    hari_piket: beswan.hari_piket,
+    jadwal_piket: beswan.hari_piket,
+    hari_presensi: getTodayHariName(), // Hari aktual saat beswan absen (misal: Rabu)
     tanggal: record.tanggal || getTodayDateKey(),
     jam_masuk: record.jamMasuk,
     jam_selesai: record.jamSelesai,
@@ -406,9 +407,9 @@ function renderCards(data, todayHari, state) {
     const status = rec ? rec.status : 'idle';
 
     const card = document.createElement('div');
-    card.className = `p-3.5 rounded-lg border transition-all ${isTodayPiket
-        ? 'bg-[#FAF7CC]/60 border-kse-primary shadow-xs'
-        : 'bg-white border-gray-200'
+    card.className = `p-4 rounded-xl border transition-all ${isTodayPiket
+        ? 'bg-[#FAF7CC]/40 border-kse-primary/40 shadow-xs'
+        : 'bg-white border-gray-200 shadow-xs'
       }`;
 
     let statusBadge = '';
@@ -417,40 +418,40 @@ function renderCards(data, todayHari, state) {
     if (status === 'countdown') {
       const timeLeft = formatRemainingSeconds(rec.targetEndTime - Date.now());
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
-          <i class="fa-regular fa-clock text-kse-secondary"></i>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+          <i class="fa-regular fa-clock text-amber-600"></i>
           <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>
         </span>
       `;
       actionBtn = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
-          class="w-full py-1.5 px-3 rounded-md text-xs font-semibold text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 flex items-center justify-center gap-1.5"
+          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50/50 hover:bg-rose-50 border border-rose-200 flex items-center justify-center gap-2 active:scale-[0.99] transition"
         >
           <i class="fa-solid fa-xmark text-xs"></i> Batalkan Presensi
         </button>
       `;
     } else if (status === 'selesai') {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-check text-emerald-600"></i> Hadir (60m)
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai (60m)
         </span>
       `;
       actionBtn = `
-        <button disabled class="w-full py-1.5 px-3 rounded-md text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-1.5">
+        <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50/60 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-2">
           <i class="fa-solid fa-check"></i> Selesai (${rec.jamMasuk || ''} - ${rec.jamSelesai || ''})
         </button>
       `;
     } else {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
           Belum Hadir
         </span>
       `;
       actionBtn = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full py-2 px-3 rounded-md text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen flex items-center justify-center gap-1.5 shadow-xs"
+          class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs transition"
         >
           <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk (1 Jam)
         </button>
@@ -458,30 +459,30 @@ function renderCards(data, todayHari, state) {
     }
 
     card.innerHTML = `
-      <div class="flex items-start justify-between gap-2 mb-2">
+      <div class="flex items-start justify-between gap-3 mb-2.5">
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-bold text-gray-400">#${beswan.id}</span>
-            <h4 class="text-xs font-bold text-gray-900 truncate">${beswan.nama}</h4>
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">#${beswan.id}</span>
+            <h4 class="text-xs font-bold text-gray-900 leading-snug break-words">${beswan.nama}</h4>
           </div>
-          <p class="text-[11px] text-gray-500 mt-0.5 truncate">${beswan.divisi}</p>
+          <p class="text-[11px] text-gray-500 leading-tight break-words">${beswan.divisi}</p>
         </div>
         <div class="shrink-0">
           ${statusBadge}
         </div>
       </div>
 
-      <div class="flex items-center justify-between text-[11px] py-1.5 border-t border-gray-100 my-1.5">
-        <span class="text-gray-500">Jadwal Piket:</span>
+      <div class="flex items-center justify-between text-xs py-2 border-t border-gray-100 my-1.5">
+        <span class="text-gray-500 text-[11px]">Jadwal Piket:</span>
         ${isTodayPiket
-        ? `<span class="font-bold text-kse-primary bg-kse-secondary/30 px-1.5 py-0.2 rounded flex items-center gap-1 border border-kse-secondary/50">
-                 <i class="fa-solid fa-star text-kse-earth text-[9px]"></i> ${beswan.hari_piket} (Hari Ini)
-               </span>`
-        : `<span class="font-medium text-gray-700">${beswan.hari_piket}</span>`
+        ? `<span class="font-bold text-xs text-kse-primary bg-kse-secondary/25 px-2 py-0.5 rounded-md flex items-center gap-1 border border-kse-secondary/50">
+             <i class="fa-solid fa-star text-kse-earth text-[10px]"></i> ${beswan.hari_piket} (Hari Ini)
+           </span>`
+        : `<span class="font-semibold text-xs text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">${beswan.hari_piket}</span>`
       }
       </div>
 
-      <div class="mt-2">
+      <div class="mt-2.5">
         ${actionBtn}
       </div>
     `;
