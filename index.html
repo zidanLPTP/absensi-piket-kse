@@ -4,18 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistem Absensi Piket Sekretariat - Paguyuban KSE UNRI</title>
-
     <link rel="icon " href="assets/image/icon.svg" />
 
-    <!-- Google Fonts: League Spartan (Header) & Montserrat (Body) -->
+    <!-- League Spartan (Header) sama Montserrat (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -41,25 +38,23 @@
       };
     </script>
 
-    <!-- Font Awesome Icons -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
 
-    <!-- Custom Modular Styles (UI/UX Pro Max Theme KSE UNRI) -->
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body
     class="min-h-screen flex flex-col selection:bg-kse-secondary selection:text-kse-primary"
   >
-    <!-- ================= NAVBAR ================= -->
+    <!--  NAVBAR -->
     <header
       class="bg-kse-primary text-white sticky top-0 z-40 border-b-2 border-kse-secondary/70 shadow-sm"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 sm:h-18">
-          <!-- Logo & Brand Title -->
+          <!-- Logo -->
           <div class="flex items-center space-x-3">
             <div
               class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-kse-secondary"
@@ -80,7 +75,7 @@
             </div>
           </div>
 
-          <!-- Live Clock & Today's Indicator (Clean & Professional) -->
+          <!-- Jam dan Tanggal -->
           <div class="flex items-center gap-3">
             <div class="hidden sm:flex flex-col text-right">
               <span
@@ -106,13 +101,13 @@
       </div>
     </header>
 
-    <!-- ================= MAIN CONTAINER ================= -->
+    <!-- MAIN CONTAINER -->
     <main
       class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
     >
-      <!-- Stat Metrics (Clean Structured Cards) -->
+      <!-- 4 kartu -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <!-- Card Status Hari Ini -->
+        <!-- Status Hari Ini -->
         <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <div class="flex items-center justify-between text-gray-500 mb-1">
             <span class="text-[11px] font-semibold uppercase tracking-wider"
@@ -128,7 +123,7 @@
           </h3>
         </div>
 
-        <!-- Card Total Beswan -->
+        <!-- Total Beswan -->
         <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <div class="flex items-center justify-between text-gray-500 mb-1">
             <span class="text-[11px] font-semibold uppercase tracking-wider"
@@ -144,7 +139,7 @@
           </h3>
         </div>
 
-        <!-- Card Bertugas Hari Ini -->
+        <!-- Piket Hari Ini -->
         <div
           class="bg-white rounded-lg p-4 border border-emerald-100 bg-[#FAF7CC]/30 shadow-sm"
         >
@@ -162,7 +157,7 @@
           </h3>
         </div>
 
-        <!-- Card Sudah Hadir Hari Ini -->
+        <!-- Sudah Hadir dan piket Hari Ini -->
         <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
           <div class="flex items-center justify-between text-gray-500 mb-1">
             <span class="text-[11px] font-semibold uppercase tracking-wider"
@@ -179,11 +174,11 @@
         </div>
       </div>
 
-      <!-- Filter & Search Controls (Structured & Clean) -->
+      <!-- 2 kartu -->
       <div
         class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3"
       >
-        <!-- Search Input -->
+        <!-- Pencarian -->
         <div class="relative w-full md:w-80">
           <div
             class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-xs"
@@ -198,13 +193,15 @@
           />
           <button
             id="clearSearchBtn"
+            type="button"
+            aria-label="Hapus pencarian"
             class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
           >
             <i class="fa-solid fa-xmark text-xs"></i>
           </button>
         </div>
 
-        <!-- Quick Filter Buttons (Ganti Emoji dengan Ikon FontAwesome yang Senada) -->
+        <!-- filter -->
         <div
           class="flex flex-wrap items-center gap-1.5 justify-start md:justify-end"
         >
@@ -239,7 +236,7 @@
         </div>
       </div>
 
-      <!-- Alert / Toast Banner -->
+      <!-- alert -->
       <div
         id="toastNotification"
         class="hidden transform transition-all duration-200 ease-out bg-kse-primary text-white px-4 py-3 rounded-md shadow-md flex items-center justify-between text-xs"
@@ -253,17 +250,18 @@
         </div>
         <button
           onclick="hideToast()"
+          type="button"
           class="text-white/70 hover:text-white ml-4"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- ================= BESWAN LIST SECTION ================= -->
+      <!-- LIST BESWAN -->
       <div
         class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
       >
-        <!-- Desktop & Tablet Table View (table-fixed dengan lebar pasti tiap kolom) -->
+        <!-- tampilan destkop -->
         <div class="hidden md:block overflow-x-auto custom-scrollbar">
           <table class="table-fixed-kse w-full text-left border-collapse">
             <thead>
@@ -286,17 +284,17 @@
               id="beswanTableBody"
               class="divide-y divide-gray-200 text-xs"
             >
-              <!-- Populated via JavaScript -->
+              <!-- Js disini -->
             </tbody>
           </table>
         </div>
 
-        <!-- Mobile Card List View -->
+        <!-- tampilan mobile -->
         <div id="beswanMobileList" class="md:hidden p-3 sm:p-4 space-y-3">
-          <!-- Populated via JavaScript -->
+          <!-- Js disini -->
         </div>
 
-        <!-- Empty State -->
+        <!-- tampilan kosong -->
         <div id="emptyState" class="hidden py-12 text-center">
           <div
             class="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"
@@ -313,7 +311,7 @@
         </div>
       </div>
 
-      <!-- System Info & Notes Footer -->
+      <!-- info tipis tipis -->
       <div
         class="bg-gray-50 border border-gray-200 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-600"
       >
@@ -336,7 +334,7 @@
       </div>
     </main>
 
-    <!-- ================= FOOTER ================= -->
+    <!-- FOOTER -->
     <footer
       class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 text-xs mt-auto"
     >
@@ -355,15 +353,15 @@
       </div>
     </footer>
 
-    <!-- ================= MODAL KONFIRMASI PEMBATALAN (Pusat Layar + Backdrop Gelap Penuh) ================= -->
+    <!--  MODAL KONFIRMASI PEMBATALAN -->
     <div
       id="cancelConfirmModal"
       class="hidden modal-backdrop-overlay flex items-center justify-center p-4"
     >
-      <!-- Click outside to cancel helper -->
+      <!-- batalkan -->
       <div class="absolute inset-0" onclick="closeCancelModal()"></div>
 
-      <!-- Modal Dialog Card -->
+      <!-- dialog -->
       <div
         class="relative bg-white rounded-lg max-w-md w-full p-6 border border-gray-200 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150"
       >
@@ -409,11 +407,11 @@
       </div>
     </div>
 
-    <!-- 1. Konfigurasi Endpoint & Parameter -->
+    <!-- Konfigurasi Endpoint sama Parameter -->
     <script src="js/config.js"></script>
-    <!-- 2. Master Data Beswan KSE UNRI -->
+    <!-- Data Beswan KSE UNRI -->
     <script src="js/data/beswan.js"></script>
-    <!-- 3. Core Engine & State Management Presensi -->
+    <!-- Core Engine sama State Management Presensi -->
     <script src="js/app.js"></script>
   </body>
 </html>
