@@ -21,7 +21,7 @@ const BESWAN_DATA = [
   { id: 20, nama: "Ghinna Faadhilah Husni", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Rabu" },
   { id: 21, nama: "Novia Putri Tiefi", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Rabu" },
   { id: 22, nama: "Ade Gheriya Rahima Br. Pasaribu", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Rabu" },
-  { id: 23, nama: "Dzakira Syarqiya", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: " Rabu" },
+  { id: 23, nama: "Dzakira Syarqiya", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Rabu" },
   { id: 24, nama: "Muhammad Jadid Ghifari", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Kamis" },
   { id: 25, nama: "Rahma Cahyani", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Kamis" },
   { id: 26, nama: "Latifah Hanum", divisi: "Komunikasi dan Informasi (KOMINFO)", hari_piket: "Kamis" },
