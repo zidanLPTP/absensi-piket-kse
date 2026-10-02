@@ -53,6 +53,68 @@ function formatRemainingSeconds(diffMs) {
   return `${m}:${s}`;
 }
 
+// ================= JADWAL PIKET HELPERS (Mendukung Single Hari atau Array Hari) =================
+function getJadwalPiketArray(hariPiket) {
+  if (!hariPiket) return [];
+  if (Array.isArray(hariPiket)) {
+    return hariPiket.map(h => String(h).trim()).filter(Boolean);
+  }
+  if (typeof hariPiket === 'string') {
+    return hariPiket.split(',').map(h => h.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function isBeswanPiketToday(beswan, todayHari) {
+  if (!beswan) return false;
+  const list = getJadwalPiketArray(beswan.hari_piket);
+  return list.some(h => h.toLowerCase() === todayHari.toLowerCase());
+}
+
+function renderJadwalBadges(hariPiket, todayHari) {
+  const list = getJadwalPiketArray(hariPiket);
+  if (list.length === 0) {
+    return `<span class="text-gray-400 text-xs">-</span>`;
+  }
+  return `
+    <div class="flex flex-wrap items-center justify-center gap-1">
+      ${list.map(hari => {
+        const isToday = hari.toLowerCase() === todayHari.toLowerCase();
+        if (isToday) {
+          return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-kse-primary text-white shadow-xs">
+            <i class="fa-solid fa-star text-kse-secondary text-[9px]"></i> ${hari}
+          </span>`;
+        }
+        return `<span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
+          ${hari}
+        </span>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderMobileJadwalBadges(hariPiket, todayHari) {
+  const list = getJadwalPiketArray(hariPiket);
+  if (list.length === 0) {
+    return `<span class="text-gray-400 text-xs">-</span>`;
+  }
+  return `
+    <div class="flex flex-wrap items-center justify-end gap-1">
+      ${list.map(hari => {
+        const isToday = hari.toLowerCase() === todayHari.toLowerCase();
+        if (isToday) {
+          return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-kse-primary text-white shadow-xs">
+            <i class="fa-solid fa-star text-kse-secondary text-[8px]"></i> ${hari} (Hari Ini)
+          </span>`;
+        }
+        return `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-600 bg-gray-100 border border-gray-200">
+          ${hari}
+        </span>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 // ================= LIFECYCLE & INIT =================
 document.addEventListener('DOMContentLoaded', () => {
   initClockAndDates();
@@ -285,7 +347,7 @@ async function syncToGoogleSheets(beswan, sessionObj) {
     id: beswan.id,
     nama: beswan.nama,
     divisi: beswan.divisi,
-    jadwal_piket: beswan.hari_piket,
+    jadwal_piket: getJadwalPiketArray(beswan.hari_piket).join(", ") || "-",
     hari_presensi: getTodayHariName(), // Hari aktual saat beswan absen (misal: Jumat)
     tanggal: sessionObj.tanggal || getTodayDateKey(),
     jam_masuk: sessionObj.jamMasuk,
@@ -352,8 +414,8 @@ function sortBeswanList(list, todayHari, state) {
     const aIsActive = aRec.activeSession !== null;
     const bIsActive = bRec.activeSession !== null;
 
-    const aIsTodayPiket = a.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
-    const bIsTodayPiket = b.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
+    const aIsTodayPiket = isBeswanPiketToday(a, todayHari);
+    const bIsTodayPiket = isBeswanPiketToday(b, todayHari);
 
     const aHasAttended = aRec.sessions.length > 0;
     const bHasAttended = bRec.sessions.length > 0;
@@ -385,7 +447,7 @@ function renderApp() {
   let totalCompletedSessions = 0;
 
   BESWAN_DATA.forEach(b => {
-    const isToday = b.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
+    const isToday = isBeswanPiketToday(b, todayHari);
     const rec = normalizeRecord(state[b.id]);
 
     if (isToday) piketHariIniCount++;
@@ -423,7 +485,7 @@ function renderApp() {
     if (!matchesSearch) return false;
 
     const rec = normalizeRecord(state[beswan.id]);
-    const isTodayPiket = beswan.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
+    const isTodayPiket = isBeswanPiketToday(beswan, todayHari);
     const isActive = rec.activeSession !== null;
     const hasAttended = rec.sessions.length > 0;
 
@@ -453,7 +515,7 @@ function renderTable(data, todayHari, state) {
   tbody.innerHTML = '';
 
   data.forEach((beswan) => {
-    const isTodayPiket = beswan.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
+    const isTodayPiket = isBeswanPiketToday(beswan, todayHari);
     const isBPH = beswan.divisi.includes('BPH') || beswan.divisi.toLowerCase().includes('pengurus harian');
     const rec = normalizeRecord(state[beswan.id]);
     const active = rec.activeSession;
@@ -536,13 +598,7 @@ function renderTable(data, todayHari, state) {
       `;
     }
 
-    const hariBadge = isTodayPiket
-      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-kse-primary text-white">
-           <i class="fa-solid fa-star text-kse-secondary text-[10px]"></i> ${beswan.hari_piket}
-         </span>`
-      : `<span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-           ${beswan.hari_piket}
-         </span>`;
+    const hariBadgesHtml = renderJadwalBadges(beswan.hari_piket, todayHari);
 
     tr.innerHTML = `
       <td class="py-3 px-4 text-center text-xs text-gray-500 font-medium">${beswan.id}</td>
@@ -558,7 +614,7 @@ function renderTable(data, todayHari, state) {
       <td class="py-3 px-4 text-gray-600 text-xs">
         <span class="leading-snug break-words" title="${beswan.divisi}">${beswan.divisi}</span>
       </td>
-      <td class="py-3 px-4 text-center">${hariBadge}</td>
+      <td class="py-3 px-4 text-center">${hariBadgesHtml}</td>
       <td class="py-3 px-4 text-center">${statusBadgeHtml}</td>
       <td class="py-3 px-4 text-center">${actionBtnHtml}</td>
     `;
@@ -573,7 +629,7 @@ function renderCards(data, todayHari, state) {
   container.innerHTML = '';
 
   data.forEach((beswan) => {
-    const isTodayPiket = beswan.hari_piket.trim().toLowerCase() === todayHari.toLowerCase();
+    const isTodayPiket = isBeswanPiketToday(beswan, todayHari);
     const isBPH = beswan.divisi.includes('BPH') || beswan.divisi.toLowerCase().includes('pengurus harian');
     const rec = normalizeRecord(state[beswan.id]);
     const active = rec.activeSession;
@@ -679,13 +735,8 @@ function renderCards(data, todayHari, state) {
       </div>
 
       <div class="flex items-center justify-between text-xs py-1.5 border-t border-gray-100 my-1">
-        <span class="text-gray-500 text-[11px]">Jadwal Piket:</span>
-        ${isTodayPiket
-        ? `<span class="font-bold text-xs text-kse-primary bg-kse-secondary/25 px-2 py-0.5 rounded-md flex items-center gap-1 border border-kse-secondary/50">
-             <i class="fa-solid fa-star text-kse-earth text-[10px]"></i> ${beswan.hari_piket} (Hari Ini)
-           </span>`
-        : `<span class="font-semibold text-xs text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">${beswan.hari_piket}</span>`
-      }
+        <span class="text-gray-500 text-[11px] shrink-0 mr-2">Jadwal Piket:</span>
+        ${renderMobileJadwalBadges(beswan.hari_piket, todayHari)}
       </div>
 
       ${historyHtml}
