@@ -56,11 +56,16 @@ function formatRemainingSeconds(diffMs) {
 // ================= JADWAL PIKET HELPERS (Mendukung Single Hari atau Array Hari) =================
 function getJadwalPiketArray(hariPiket) {
   if (!hariPiket) return [];
+  const formatHariName = (h) => {
+    const str = String(h).trim();
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
   if (Array.isArray(hariPiket)) {
-    return hariPiket.map(h => String(h).trim()).filter(Boolean);
+    return hariPiket.map(formatHariName).filter(Boolean);
   }
   if (typeof hariPiket === 'string') {
-    return hariPiket.split(',').map(h => h.trim()).filter(Boolean);
+    return hariPiket.split(',').map(formatHariName).filter(Boolean);
   }
   return [];
 }
