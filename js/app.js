@@ -86,8 +86,8 @@ function renderJadwalBadges(hariPiket, todayHari) {
       ${list.map(hari => {
         const isToday = hari.toLowerCase() === todayHari.toLowerCase();
         if (isToday) {
-          return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-kse-primary text-white shadow-xs">
-            <i class="fa-solid fa-star text-kse-secondary text-[9px]"></i> ${hari}
+          return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-kse-primary text-white shadow-xs">
+            ${hari}
           </span>`;
         }
         return `<span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
@@ -108,8 +108,8 @@ function renderMobileJadwalBadges(hariPiket, todayHari) {
       ${list.map(hari => {
         const isToday = hari.toLowerCase() === todayHari.toLowerCase();
         if (isToday) {
-          return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-kse-primary text-white shadow-xs">
-            <i class="fa-solid fa-star text-kse-secondary text-[8px]"></i> ${hari} (Hari Ini)
+          return `<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-kse-primary text-white shadow-xs">
+            ${hari} (Hari Ini)
           </span>`;
         }
         return `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-600 bg-gray-100 border border-gray-200">
@@ -477,7 +477,7 @@ function renderApp() {
   const btnFilterHadir = document.getElementById('btnFilterHadir');
 
   if (btnFilterSemua) btnFilterSemua.textContent = `Semua (${BESWAN_DATA.length})`;
-  if (btnFilterHariIni) btnFilterHariIni.innerHTML = `<i class="fa-regular fa-star text-kse-secondary"></i> Piket Hari Ini (${piketHariIniCount})`;
+  if (btnFilterHariIni) btnFilterHariIni.innerHTML = `<i class="fa-regular fa-calendar-check text-kse-secondary"></i> Piket Hari Ini (${piketHariIniCount})`;
   if (btnFilterAktif) btnFilterAktif.innerHTML = `<i class="fa-regular fa-clock text-amber-600"></i> Berlangsung (${activeCount})`;
   if (btnFilterHadir) btnFilterHadir.innerHTML = `<i class="fa-regular fa-circle-check text-emerald-600"></i> Selesai (${completedBeswanCount})`;
 
@@ -556,7 +556,7 @@ function renderTable(data, todayHari, state) {
       statusBadgeHtml = `
         <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-100 text-emerald-900 border border-emerald-400 shadow-xs">
           <span class="inline-flex items-center gap-1 text-emerald-800 font-bold">
-            <i class="fa-solid fa-star text-amber-500 text-[10px]"></i> 3/3 Piket (Lengkap)
+            <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i> 3/3 Piket (Lengkap)
           </span>
           <span class="text-[10px] text-emerald-700 font-medium">Maksimal Hari Ini Tercapai</span>
         </div>
@@ -668,7 +668,7 @@ function renderCards(data, todayHari, state) {
     } else if (completedCount >= MAX_PIKET_PER_DAY) {
       statusBadge = `
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-400">
-          <i class="fa-solid fa-star text-amber-500"></i> 3/3 Selesai (Lengkap)
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> 3/3 Selesai (Lengkap)
         </span>
       `;
       actionBtn = `
