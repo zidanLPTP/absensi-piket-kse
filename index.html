@@ -75,8 +75,21 @@
             </div>
           </div>
 
-          <!-- Jam dan Tanggal -->
-          <div class="flex items-center gap-3">
+          <!-- Jam dan Tanggal + Status Sinkronisasi -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Sync Indicator Badge -->
+            <div id="syncIndicatorWrapper" class="flex items-center">
+              <button
+                id="syncStatusBadge"
+                onclick="manualTriggerSync()"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-emerald-900/60 text-emerald-200 border-emerald-500/50 hover:bg-emerald-900"
+                title="Status sinkronisasi ke Google Sheets"
+              >
+                <i id="syncStatusIcon" class="fa-solid fa-cloud-check text-xs text-emerald-300"></i>
+                <span id="syncStatusText">Tersinkronkan</span>
+              </button>
+            </div>
             <div class="hidden sm:flex flex-col text-right">
               <span
                 id="currentDateLabel"

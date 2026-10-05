@@ -19,10 +19,11 @@ function doGet(e) {
   ).setMimeType(ContentService.MimeType.JSON);
 }
 
-// Menangani data presensi masuk dari web (POST)
+// Menangani data presensi masuk dari web (POST) - Mendukung Single & Batch Processing
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(10000); // Kunci concurrency 10 detik
+  // Naikkan batas tunggu lock ke 30 detik agar antrean banyak data tidak timeout
+  lock.waitLock(30000);
 
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -74,6 +75,13 @@ function doPost(e) {
         "#EEB319",
         SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
       );
+
+      // Lebar kolom standar profesional KSE UNRI
+      sheet.setColumnWidth(1, 230); // Nama Anggota
+      sheet.setColumnWidth(2, 260); // Divisi
+      sheet.setColumnWidth(3, 110); // Hari
+      sheet.setColumnWidth(4, 120); // Tanggal
+      sheet.setColumnWidth(5, 160); // Status Kehadiran
     }
 
     // Parsing data payload JSON
@@ -88,10 +96,16 @@ function doPost(e) {
       data = e.parameter;
     }
 
-    // Ambil Hari Aktual saat presensi ditekan (Fallback ke hitungan waktu server jika payload kosong)
-    var hariAktual =
-      data.hari_presensi ||
-      Utilities.formatDate(new Date(), "Asia/Jakarta", "EEEE");
+    // Dukung format Single Item maupun Batch Items (Array)
+    var items = [];
+    if (Array.isArray(data)) {
+      items = data;
+    } else if (data.items && Array.isArray(data.items)) {
+      items = data.items;
+    } else if (data.nama) {
+      items = [data];
+    }
+
     var mapHariEng = {
       Sunday: "Minggu",
       Monday: "Senin",
@@ -101,42 +115,54 @@ function doPost(e) {
       Friday: "Jumat",
       Saturday: "Sabtu",
     };
-    if (mapHariEng[hariAktual]) {
-      hariAktual = mapHariEng[hariAktual];
+
+    var rowsToAppend = [];
+    for (var i = 0; i < items.length; i++) {
+      var itm = items[i];
+
+      // Ambil Hari Aktual saat presensi ditekan (Fallback ke hitungan waktu server jika payload kosong)
+      var hariAktual =
+        itm.hari_presensi ||
+        Utilities.formatDate(new Date(), "Asia/Jakarta", "EEEE");
+      if (mapHariEng[hariAktual]) {
+        hariAktual = mapHariEng[hariAktual];
+      }
+
+      var nama = itm.nama || "Tidak Diketahui";
+      var divisi = itm.divisi || "-";
+      var tanggal =
+        itm.tanggal ||
+        Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd");
+      var status = itm.status || "Hadir";
+
+      rowsToAppend.push([nama, divisi, hariAktual, tanggal, status]);
     }
 
-    var nama = data.nama || "Tidak Diketahui";
-    var divisi = data.divisi || "-";
-    var tanggal =
-      data.tanggal ||
-      Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd");
-    var status = data.status || "Hadir";
+    // Tulis baris secara atomik & cepat (Bulk Writing via setValues)
+    if (rowsToAppend.length > 0) {
+      var startRow = sheet.getLastRow() + 1;
+      var numRows = rowsToAppend.length;
 
-    // Simpan baris rekaman presensi dengan Hari Kehadiran Aktual
-    sheet.appendRow([nama, divisi, hariAktual, tanggal, status]);
+      var dataRange = sheet.getRange(startRow, 1, numRows, 5);
+      dataRange.setValues(rowsToAppend);
+      dataRange.setFontFamily("Montserrat");
+      dataRange.setFontSize(10);
+      dataRange.setVerticalAlignment("middle");
 
-    var lastRow = sheet.getLastRow();
-    sheet.setRowHeight(lastRow, 28);
+      // Rata tengah untuk kolom Hari, Tanggal, dan Status
+      sheet.getRange(startRow, 3, numRows, 3).setHorizontalAlignment("center");
 
-    // Styling baris data: font bersih, vertikal tengah, dan alignment yang rapi
-    var dataRange = sheet.getRange(lastRow, 1, 1, 5);
-    dataRange.setFontFamily("Montserrat");
-    dataRange.setFontSize(10);
-    dataRange.setVerticalAlignment("middle");
-
-    // Rata tengah untuk Hari, Tanggal, dan Status
-    sheet.getRange(lastRow, 3, 1, 3).setHorizontalAlignment("center");
-
-    // Auto-fit lebar kolom agar teks tidak terpotong
-    for (var col = 1; col <= 5; col++) {
-      sheet.autoResizeColumn(col);
+      // Set tinggi baris efisien
+      for (var r = startRow; r < startRow + numRows; r++) {
+        sheet.setRowHeight(r, 28);
+      }
     }
 
     return ContentService.createTextOutput(
       JSON.stringify({
         status: "success",
-        message: "Presensi berhasil dicatat di Google Sheets",
-        nama: nama,
+        count: rowsToAppend.length,
+        message: "Presensi berhasil dicatat (" + rowsToAppend.length + " data)",
       }),
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {

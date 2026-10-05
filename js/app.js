@@ -124,8 +124,33 @@ function renderMobileJadwalBadges(hariPiket, todayHari) {
 document.addEventListener('DOMContentLoaded', () => {
   initClockAndDates();
   setupSearch();
+  reconcileUnsyncedSessions();
+  updateSyncIndicatorUI();
   renderApp();
   startLiveTicker();
+  processSyncQueue();
+
+  // Event listener deteksi online/offline
+  window.addEventListener('online', () => {
+    updateSyncIndicatorUI();
+    showToast('Koneksi internet pulih. Memproses antrean sinkronisasi...', 'info');
+    processSyncQueue();
+  });
+
+  window.addEventListener('offline', () => {
+    updateSyncIndicatorUI();
+    showToast('Koneksi terputus. Data presensi tetap tersimpan aman di antrean lokal.', 'warning');
+  });
+
+  // Background worker tiap 30 detik untuk memastikan tidak ada data yang tertunda
+  setInterval(() => {
+    if (!isProcessingQueue && navigator.onLine) {
+      const queue = getSyncQueue();
+      if (queue.some(item => item.status === 'pending')) {
+        processSyncQueue();
+      }
+    }
+  }, 30000);
 });
 
 function initClockAndDates() {
@@ -340,11 +365,35 @@ function selesaikanAbsen(id) {
   syncToGoogleSheets(beswan, sessionObj);
 }
 
-// ================= SYNC TO GOOGLE SHEETS =================
-async function syncToGoogleSheets(beswan, sessionObj) {
-  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "ISI_URL_WEB_APP_DISINI") {
-    console.warn("URL Google Apps Script belum dikonfigurasi.");
-    showToast(`Tercatat Hadir Lokal: ${beswan.nama} (Piket ke-${sessionObj.session}). (Harap konfigurasi GOOGLE_SCRIPT_URL).`, 'warning');
+// ================= PERSISTENT QUEUE & GOOGLE SHEETS BATCH SYNC =================
+const SYNC_QUEUE_KEY = 'kse_sync_queue';
+let isProcessingQueue = false;
+
+function getSyncQueue() {
+  try {
+    const raw = localStorage.getItem(SYNC_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Gagal membaca sync queue:", e);
+    return [];
+  }
+}
+
+function saveSyncQueue(queue) {
+  try {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    console.error("Gagal menyimpan sync queue:", e);
+  }
+  updateSyncIndicatorUI();
+}
+
+function addToSyncQueue(beswan, sessionObj) {
+  const queue = getSyncQueue();
+  const queueId = `${beswan.id}_${sessionObj.session}_${sessionObj.tanggal || getTodayDateKey()}_${sessionObj.startTime || Date.now()}`;
+
+  // Hindari duplikasi di dalam antrean
+  if (queue.some(item => item.queueId === queueId)) {
     return;
   }
 
@@ -353,34 +402,251 @@ async function syncToGoogleSheets(beswan, sessionObj) {
     nama: beswan.nama,
     divisi: beswan.divisi,
     jadwal_piket: getJadwalPiketArray(beswan.hari_piket).join(", ") || "-",
-    hari_presensi: getTodayHariName(), // Hari aktual saat beswan absen (misal: Jumat)
+    hari_presensi: getTodayHariName(), // Hari aktual saat presensi selesai
     tanggal: sessionObj.tanggal || getTodayDateKey(),
     jam_masuk: sessionObj.jamMasuk,
     jam_selesai: sessionObj.jamSelesai,
     status: `Hadir (Piket ${sessionObj.session})`
   };
 
+  queue.push({
+    queueId: queueId,
+    beswanId: beswan.id,
+    sessionNumber: sessionObj.session,
+    payload: payload,
+    status: 'pending', // 'pending' | 'syncing'
+    retries: 0,
+    createdAt: Date.now()
+  });
+
+  saveSyncQueue(queue);
+}
+
+function reconcileUnsyncedSessions() {
+  const state = getAttendanceState();
+  const queue = getSyncQueue();
+  let added = 0;
+
+  Object.keys(state).forEach(id => {
+    const numId = parseInt(id, 10);
+    const beswan = BESWAN_DATA.find(b => b.id === numId);
+    if (!beswan) return;
+
+    const rec = normalizeRecord(state[id]);
+    rec.sessions.forEach(sess => {
+      if (sess.synced === false) {
+        const queueId = `${beswan.id}_${sess.session}_${sess.tanggal || getTodayDateKey()}_${sess.startTime || ''}`;
+        const alreadyInQueue = queue.some(q => q.queueId === queueId || (q.beswanId === beswan.id && q.sessionNumber === sess.session));
+        if (!alreadyInQueue) {
+          queue.push({
+            queueId: queueId,
+            beswanId: beswan.id,
+            sessionNumber: sess.session,
+            payload: {
+              id: beswan.id,
+              nama: beswan.nama,
+              divisi: beswan.divisi,
+              jadwal_piket: getJadwalPiketArray(beswan.hari_piket).join(", ") || "-",
+              hari_presensi: getTodayHariName(),
+              tanggal: sess.tanggal || getTodayDateKey(),
+              jam_masuk: sess.jamMasuk,
+              jam_selesai: sess.jamSelesai,
+              status: `Hadir (Piket ${sess.session})`
+            },
+            status: 'pending',
+            retries: 0,
+            createdAt: Date.now()
+          });
+          added++;
+        }
+      }
+    });
+  });
+
+  if (added > 0) {
+    saveSyncQueue(queue);
+  }
+}
+
+async function processSyncQueue() {
+  if (isProcessingQueue) return;
+
+  if (!navigator.onLine) {
+    updateSyncIndicatorUI();
+    return;
+  }
+
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "ISI_URL_WEB_APP_DISINI") {
+    updateSyncIndicatorUI();
+    return;
+  }
+
+  let queue = getSyncQueue();
+  const now = Date.now();
+  let recovered = false;
+
+  // Pulihkan item yang stuck 'syncing' lebih dari 45 detik (misal akibat browser sleep / freeze)
+  queue.forEach(item => {
+    if (item.status === 'syncing' && (now - (item.syncStartedAt || now)) > 45000) {
+      item.status = 'pending';
+      recovered = true;
+    }
+  });
+  if (recovered) saveSyncQueue(queue);
+
+  const pendingItems = queue.filter(item => item.status === 'pending');
+  if (pendingItems.length === 0) {
+    updateSyncIndicatorUI();
+    return;
+  }
+
+  isProcessingQueue = true;
+
+  // Batching hingga 10 item per request untuk efisiensi tinggi & anti-timeout
+  const BATCH_SIZE = 10;
+  const batch = pendingItems.slice(0, BATCH_SIZE);
+  const batchIds = new Set(batch.map(b => b.queueId));
+
+  queue.forEach(item => {
+    if (batchIds.has(item.queueId)) {
+      item.status = 'syncing';
+      item.syncStartedAt = Date.now();
+    }
+  });
+  saveSyncQueue(queue);
+  updateSyncIndicatorUI();
+
   try {
+    const payloadBody = {
+      items: batch.map(b => b.payload)
+    };
+
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payloadBody)
     });
 
+    // Berhasil dikirim! Hapus item batch dari antrean lokal
+    const freshQueue = getSyncQueue();
+    const remainingQueue = freshQueue.filter(item => !batchIds.has(item.queueId));
+    saveSyncQueue(remainingQueue);
+
+    // Tandai session terkait sebagai synced: true di attendance state
     const state = getAttendanceState();
-    const record = normalizeRecord(state[beswan.id]);
-    const matched = record.sessions.find(s => s.session === sessionObj.session);
-    if (matched) {
-      matched.synced = true;
-      state[beswan.id] = record;
+    let stateChanged = false;
+    batch.forEach(item => {
+      if (state[item.beswanId]) {
+        const rec = normalizeRecord(state[item.beswanId]);
+        const targetSession = rec.sessions.find(s => s.session === item.sessionNumber);
+        if (targetSession && !targetSession.synced) {
+          targetSession.synced = true;
+          state[item.beswanId] = rec;
+          stateChanged = true;
+        }
+      }
+    });
+    if (stateChanged) {
       saveAttendanceState(state);
+      renderApp();
     }
-    showToast(`Data Piket ke-${sessionObj.session} ${beswan.nama} berhasil disinkronkan ke Google Sheets!`, 'success');
-    renderApp();
+
+    if (batch.length === 1) {
+      showToast(`Data Piket ${batch[0].payload.nama} (Piket ke-${batch[0].sessionNumber}) berhasil disinkronkan ke Google Sheets!`, 'success');
+    } else {
+      showToast(`${batch.length} data presensi piket berhasil disinkronkan ke Google Sheets!`, 'success');
+    }
   } catch (error) {
-    console.error("Gagal sinkronisasi Google Sheets:", error);
-    showToast(`Gagal mengirim data ke Sheets untuk ${beswan.nama}. Tersimpan di memori browser.`, 'error');
+    console.error("Gagal sinkronisasi antrean ke Google Sheets:", error);
+    const currentQueue = getSyncQueue();
+    currentQueue.forEach(item => {
+      if (batchIds.has(item.queueId)) {
+        item.status = 'pending';
+        item.retries = (item.retries || 0) + 1;
+        delete item.syncStartedAt;
+      }
+    });
+    saveSyncQueue(currentQueue);
+    showToast(`Koneksi terganggu. ${batch.length} data aman di antrean lokal & akan otomatis dikirim saat online.`, 'warning');
+  } finally {
+    isProcessingQueue = false;
+    updateSyncIndicatorUI();
+
+    // Jika masih ada item antrean yang belum terkirim, jeda 600ms lalu lanjutkan batch berikutnya
+    const remainingPending = getSyncQueue().filter(item => item.status === 'pending');
+    if (remainingPending.length > 0 && navigator.onLine) {
+      setTimeout(() => {
+        processSyncQueue();
+      }, 600);
+    }
+  }
+}
+
+// Wrapper kompatibilitas untuk panggilan sinkronisasi
+function syncToGoogleSheets(beswan, sessionObj) {
+  addToSyncQueue(beswan, sessionObj);
+  processSyncQueue();
+}
+
+function manualTriggerSync() {
+  if (!navigator.onLine) {
+    showToast("Perangkat Anda sedang offline. Mohon periksa koneksi internet.", "warning");
+    return;
+  }
+  const queue = getSyncQueue();
+  const pendingCount = queue.filter(q => q.status === 'pending').length;
+  if (pendingCount === 0) {
+    showToast("Semua data presensi sudah tersinkronkan ke Google Sheets.", "success");
+    return;
+  }
+  showToast(`Menyinkronkan ${pendingCount} antrean data ke Google Sheets...`, "info");
+  processSyncQueue();
+}
+
+function updateSyncIndicatorUI() {
+  const badgeBtn = document.getElementById('syncStatusBadge');
+  const badgeText = document.getElementById('syncStatusText');
+  const badgeIcon = document.getElementById('syncStatusIcon');
+  if (!badgeBtn || !badgeText || !badgeIcon) return;
+
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "ISI_URL_WEB_APP_DISINI") {
+    badgeBtn.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-amber-900/60 text-amber-200 border-amber-500/50 hover:bg-amber-900";
+    badgeIcon.className = "fa-solid fa-triangle-exclamation text-xs text-amber-300";
+    badgeText.textContent = "URL Belum Diset";
+    badgeBtn.title = "GOOGLE_SCRIPT_URL di config.js belum diisi";
+    return;
+  }
+
+  if (!navigator.onLine) {
+    const queue = getSyncQueue();
+    const count = queue.length;
+    badgeBtn.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-rose-900/60 text-rose-200 border-rose-500/50 hover:bg-rose-900";
+    badgeIcon.className = "fa-solid fa-cloud-slash text-xs text-rose-300";
+    badgeText.textContent = count > 0 ? `Offline (${count} Antrean)` : "Offline";
+    badgeBtn.title = "Koneksi offline. Data tersimpan aman di antrean lokal browser.";
+    return;
+  }
+
+  const queue = getSyncQueue();
+  const pendingCount = queue.filter(q => q.status === 'pending').length;
+  const syncingCount = queue.filter(q => q.status === 'syncing').length;
+
+  if (syncingCount > 0 || isProcessingQueue) {
+    badgeBtn.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-amber-900/70 text-amber-200 border-amber-400/60 animate-pulse";
+    badgeIcon.className = "fa-solid fa-arrows-rotate fa-spin text-xs text-amber-300";
+    badgeText.textContent = `Menyinkronkan (${pendingCount + syncingCount})...`;
+    badgeBtn.title = "Sedang mengirim batch data presensi ke Google Sheets...";
+  } else if (pendingCount > 0) {
+    badgeBtn.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-amber-900/60 text-amber-200 border-amber-500/50 hover:bg-amber-900";
+    badgeIcon.className = "fa-solid fa-cloud-arrow-up text-xs text-amber-300";
+    badgeText.textContent = `${pendingCount} Menunggu Sync`;
+    badgeBtn.title = "Klik untuk segera mengirim antrean ke Google Sheets";
+  } else {
+    badgeBtn.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border bg-emerald-900/60 text-emerald-200 border-emerald-500/50 hover:bg-emerald-900";
+    badgeIcon.className = "fa-solid fa-cloud-check text-xs text-emerald-300";
+    badgeText.textContent = "Tersinkronkan";
+    badgeBtn.title = "Semua data presensi telah tersinkronkan ke Google Sheets";
   }
 }
 
@@ -568,7 +834,10 @@ function renderTable(data, todayHari, state) {
       `;
     } else if (completedCount > 0) {
       const nextSession = completedCount + 1;
-      const historySummary = rec.sessions.map(s => `${(s.jamMasuk || '').substring(0, 5)}-${(s.jamSelesai || '').substring(0, 5)}`).join(', ');
+      const historySummary = rec.sessions.map(s => {
+        const syncMark = s.synced ? '✓' : '⌛';
+        return `S${s.session}:${(s.jamMasuk || '').substring(0, 5)}-${(s.jamSelesai || '').substring(0, 5)} ${syncMark}`;
+      }).join(', ');
       statusBadgeHtml = `
         <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
           <span class="inline-flex items-center gap-1 text-emerald-700 font-bold">
@@ -598,7 +867,7 @@ function renderTable(data, todayHari, state) {
           onclick="mulaiAbsen(${beswan.id})"
           class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Masuk (Sesi 1)
+          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Masuk
         </button>
       `;
     }
@@ -702,7 +971,7 @@ function renderCards(data, todayHari, state) {
           onclick="mulaiAbsen(${beswan.id})"
           class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs transition"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk (Sesi 1)
+          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk
         </button>
       `;
     }
@@ -710,8 +979,9 @@ function renderCards(data, todayHari, state) {
     let historyHtml = '';
     if (completedCount > 0) {
       const sessionTags = rec.sessions.map(s => `
-        <span class="text-[10px] bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-mono">
-          Sesi ${s.session}: ${(s.jamMasuk || '').substring(0, 5)} - ${(s.jamSelesai || '').substring(0, 5)}
+        <span class="text-[10px] ${s.synced ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-300'} px-1.5 py-0.5 rounded border font-mono inline-flex items-center gap-1">
+          <span>Sesi ${s.session}: ${(s.jamMasuk || '').substring(0, 5)} - ${(s.jamSelesai || '').substring(0, 5)}</span>
+          ${s.synced ? '<i class="fa-solid fa-check text-[9px] text-emerald-600" title="Tersinkron ke Google Sheets"></i>' : '<i class="fa-solid fa-cloud-arrow-up text-[9px] text-amber-600 animate-pulse" title="Menunggu sinkronisasi"></i>'}
         </span>
       `).join('');
       historyHtml = `
