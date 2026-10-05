@@ -186,8 +186,8 @@ function doPost(e) {
  */
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu("📊 Rekapitulasi KSE UNRI")
-    .addItem("✨ Buat / Perbarui Tab Rekap Bulanan", "buatTabRekapBulanan")
+  ui.createMenu("Rekapitulasi KSE UNRI")
+    .addItem("Buat / Perbarui Tab Rekap Bulanan", "buatTabRekapBulanan")
     .addToUi();
 }
 
@@ -224,7 +224,7 @@ function buatTabRekapBulanan() {
   sheet.getRange("C2").setValue("2026-09-16").setHorizontalAlignment("center").setBackground("#FAF7CC").setFontWeight("bold");
   sheet.getRange("D2").setValue("Periode Selesai (YYYY-MM-DD):").setFontWeight("bold").setHorizontalAlignment("right");
   sheet.getRange("E2").setValue("2026-10-15").setHorizontalAlignment("center").setBackground("#FAF7CC").setFontWeight("bold");
-  sheet.getRange("F2").setValue("💡 Ubah tanggal di C2 & E2 untuk mereset & menghitung otomatis periode berikutnya.")
+  sheet.getRange("F2").setValue("Ubah tanggal di C2 & E2 untuk mereset & menghitung otomatis periode berikutnya.")
     .setFontColor("#555555").setFontStyle("italic").setFontSize(9);
 
   // Border aksen emas untuk input tanggal C2 & E2
@@ -339,7 +339,7 @@ function buatTabRekapBulanan() {
 
     // Formula Status Evaluasi
     var formulaStatus =
-      '=IF(F' + rowIdx + '>=E' + rowIdx + ', "✅ Memenuhi Target", "⚠️ Kurang " & (E' + rowIdx + '-F' + rowIdx + ') & " Piket")';
+      '=IF(F' + rowIdx + '>=E' + rowIdx + ', "Memenuhi Target", "Kurang " & (E' + rowIdx + '-F' + rowIdx + ') & " Piket")';
 
     rowValues.push([
       b.id,
