@@ -180,7 +180,7 @@ function initClockAndDates() {
   }, 1000);
 }
 
-const MAX_PIKET_PER_DAY = 3;
+const MAX_PIKET_PER_DAY = 1;
 
 // Helper normalisasi struktur data agar kompatibel dengan data lama di LocalStorage
 function normalizeRecord(raw) {
@@ -234,20 +234,19 @@ function mulaiAbsen(id) {
   const record = normalizeRecord(state[id]);
 
   if (record.activeSession) {
-    showToast(`Piket ke-${record.activeSession.session} untuk ${beswan.nama} sedang berjalan.`, 'warning');
+    showToast(`Hitung mundur piket untuk ${beswan.nama} sedang berjalan.`, 'warning');
     return;
   }
 
-  if (record.sessions.length >= MAX_PIKET_PER_DAY) {
-    showToast(`Batas maksimal (${MAX_PIKET_PER_DAY}x piket per hari) telah tercapai untuk ${beswan.nama}.`, 'warning');
+  if (record.sessions.length >= 1) {
+    showToast(`${beswan.nama} sudah menyelesaikan piket hari ini (1x per hari).`, 'warning');
     return;
   }
 
-  const nextSession = record.sessions.length + 1;
   const now = new Date();
 
   record.activeSession = {
-    session: nextSession,
+    session: 1,
     startTime: now.getTime(),
     targetEndTime: now.getTime() + (COUNTDOWN_DURATION_SECONDS * 1000),
     jamMasuk: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -256,7 +255,7 @@ function mulaiAbsen(id) {
 
   state[id] = record;
   saveAttendanceState(state);
-  showToast(`Presensi Piket ke-${nextSession} dimulai untuk ${beswan.nama}. Timer berjalan.`, 'info');
+  showToast(`Presensi piket dimulai untuk ${beswan.nama}. Hitung mundur 60 menit berjalan.`, 'info');
   renderApp();
 }
 
@@ -273,13 +272,8 @@ function bukaModalBatalkan(id) {
   const desc = document.getElementById('cancelModalDesc');
   const confirmBtn = document.getElementById('confirmCancelActionBtn');
 
-  const sessionNum = record.activeSession.session;
   if (desc) {
-    let extraNote = '';
-    if (record.sessions.length > 0) {
-      extraNote = `<br><span class="inline-block mt-2 text-emerald-700 font-medium bg-emerald-50 px-2 py-1 rounded border border-emerald-200">✓ ${record.sessions.length} sesi piket sebelumnya tetap tersimpan sah di Google Sheets.</span>`;
-    }
-    desc.innerHTML = `Apakah Anda yakin ingin membatalkan <strong>Piket ke-${sessionNum}</strong> untuk <strong>${beswan.nama}</strong>? Timer sesi ini akan dihentikan.${extraNote}`;
+    desc.innerHTML = `Apakah Anda yakin ingin membatalkan hitung mundur piket untuk <strong>${beswan.nama}</strong>? Timer akan dihentikan dan di-reset.`;
   }
 
   if (confirmBtn) {
@@ -313,7 +307,6 @@ function eksekusiBatalkan() {
 
   const state = getAttendanceState();
   const record = normalizeRecord(state[id]);
-  const cancelledSession = record.activeSession ? record.activeSession.session : 1;
 
   record.activeSession = null;
   if (record.sessions.length === 0) {
@@ -324,7 +317,7 @@ function eksekusiBatalkan() {
   saveAttendanceState(state);
 
   closeCancelModal();
-  showToast(`Piket ke-${cancelledSession} untuk ${nama} telah dibatalkan.`, 'warning');
+  showToast(`Hitung mundur piket untuk ${nama} telah dibatalkan.`, 'warning');
   renderApp();
 }
 
@@ -345,7 +338,7 @@ function selesaikanAbsen(id) {
   const jamSelesai = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const sessionObj = {
-    session: active.session,
+    session: 1,
     startTime: active.startTime,
     endTime: now.getTime(),
     jamMasuk: active.jamMasuk,
@@ -354,13 +347,13 @@ function selesaikanAbsen(id) {
     synced: false
   };
 
-  record.sessions.push(sessionObj);
+  record.sessions = [sessionObj];
   record.activeSession = null;
   state[id] = record;
   saveAttendanceState(state);
 
   renderApp();
-  showToast(`Selamat! ${beswan.nama} sah menyelesaikan Piket ke-${sessionObj.session} (60 menit). Sinkronisasi data...`, 'success');
+  showToast(`Selamat! ${beswan.nama} sah menyelesaikan piket hari ini (60 menit). Menyinkronkan...`, 'success');
 
   syncToGoogleSheets(beswan, sessionObj);
 }
@@ -406,7 +399,7 @@ function addToSyncQueue(beswan, sessionObj) {
     tanggal: sessionObj.tanggal || getTodayDateKey(),
     jam_masuk: sessionObj.jamMasuk,
     jam_selesai: sessionObj.jamSelesai,
-    status: `Hadir (Piket ${sessionObj.session})`
+    status: "Hadir"
   };
 
   queue.push({
@@ -451,7 +444,7 @@ function reconcileUnsyncedSessions() {
               tanggal: sess.tanggal || getTodayDateKey(),
               jam_masuk: sess.jamMasuk,
               jam_selesai: sess.jamSelesai,
-              status: `Hadir (Piket ${sess.session})`
+              status: "Hadir"
             },
             status: 'pending',
             retries: 0,
@@ -553,7 +546,7 @@ async function processSyncQueue() {
     }
 
     if (batch.length === 1) {
-      showToast(`Data Piket ${batch[0].payload.nama} (Piket ke-${batch[0].sessionNumber}) berhasil disinkronkan ke Google Sheets!`, 'success');
+      showToast(`Data Presensi ${batch[0].payload.nama} berhasil disinkronkan ke Google Sheets!`, 'success');
     } else {
       showToast(`${batch.length} data presensi piket berhasil disinkronkan ke Google Sheets!`, 'success');
     }
@@ -715,7 +708,6 @@ function renderApp() {
   let piketHariIniCount = 0;
   let activeCount = 0;
   let completedBeswanCount = 0;
-  let totalCompletedSessions = 0;
 
   BESWAN_DATA.forEach(b => {
     const isToday = isBeswanPiketToday(b, todayHari);
@@ -725,7 +717,6 @@ function renderApp() {
     if (rec.activeSession) activeCount++;
     if (rec.sessions.length > 0) {
       completedBeswanCount++;
-      totalCompletedSessions += rec.sessions.length;
     }
   });
 
@@ -733,7 +724,7 @@ function renderApp() {
   const compEl = document.getElementById('completedAttendanceCount');
   if (piketEl) piketEl.textContent = piketHariIniCount;
   if (compEl) {
-    compEl.textContent = totalCompletedSessions > 0 ? `${completedBeswanCount} (${totalCompletedSessions} Sesi)` : '0';
+    compEl.textContent = completedBeswanCount;
   }
 
   // Update counter dinamis pada tombol filter
@@ -801,65 +792,44 @@ function renderTable(data, todayHari, state) {
     if (active) {
       const timeLeft = formatRemainingSeconds(active.targetEndTime - Date.now());
       statusBadgeHtml = `
-        <div class="inline-flex flex-col items-center justify-center gap-0.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
-          <div class="inline-flex items-center gap-1.5">
-            <i class="fa-regular fa-clock text-amber-600"></i>
-            <span>Piket ke-${active.session} (<span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>)</span>
-          </div>
-          ${completedCount > 0 ? `<span class="text-[10px] text-amber-800 font-normal">Sesi sebelumnya: ${completedCount}x selesai</span>` : ''}
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+          <i class="fa-regular fa-clock text-amber-600"></i>
+          <span>Sedang Piket (<span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>)</span>
         </div>
       `;
       actionBtnHtml = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
           class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 transition"
-          title="Batalkan piket sesi ini"
+          title="Batalkan piket"
         >
-          <i class="fa-solid fa-xmark text-xs"></i> Batalkan Sesi ${active.session}
-        </button>
-      `;
-    } else if (completedCount >= MAX_PIKET_PER_DAY) {
-      statusBadgeHtml = `
-        <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-100 text-emerald-900 border border-emerald-400 shadow-xs">
-          <span class="inline-flex items-center gap-1 text-emerald-800 font-bold">
-            <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i> 3/3 Piket (Lengkap)
-          </span>
-          <span class="text-[10px] text-emerald-700 font-medium">Maksimal Hari Ini Tercapai</span>
-        </div>
-      `;
-      actionBtnHtml = `
-        <button disabled class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed">
-          <i class="fa-solid fa-check-double text-[11px]"></i> Selesai 3x
+          <i class="fa-solid fa-xmark text-xs"></i> Batalkan
         </button>
       `;
     } else if (completedCount > 0) {
-      const nextSession = completedCount + 1;
-      const historySummary = rec.sessions.map(s => {
-        const syncMark = s.synced ? '✓' : '⌛';
-        return `S${s.session}:${(s.jamMasuk || '').substring(0, 5)}-${(s.jamSelesai || '').substring(0, 5)} ${syncMark}`;
-      }).join(', ');
+      const sess = rec.sessions[0];
+      const timeRange = (sess && sess.jamMasuk && sess.jamSelesai) ? `${sess.jamMasuk.substring(0, 5)} - ${sess.jamSelesai.substring(0, 5)}` : '60 Menit';
+      const syncMark = (sess && sess.synced) 
+        ? '<i class="fa-solid fa-circle-check text-emerald-600 text-[10px]" title="Tersinkron ke Google Sheets"></i>' 
+        : '<i class="fa-solid fa-cloud-arrow-up text-amber-600 text-[10px] animate-pulse" title="Menunggu sinkronisasi"></i>';
       statusBadgeHtml = `
-        <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+        <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
           <span class="inline-flex items-center gap-1 text-emerald-700 font-bold">
-            <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i> ${completedCount}/${MAX_PIKET_PER_DAY} Piket Selesai
+            ${syncMark} Selesai Piket
           </span>
-          <span class="text-[10px] text-gray-500 font-mono" title="${historySummary}">${historySummary}</span>
+          <span class="text-[10px] text-gray-500 font-mono" title="Waktu piket: ${timeRange}">${timeRange}</span>
         </div>
       `;
       actionBtnHtml = `
-        <button
-          onclick="mulaiAbsen(${beswan.id})"
-          class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold text-kse-primary bg-[#FAF7CC] hover:bg-[#F5F1B5] border border-kse-secondary transition shadow-xs"
-          title="Mulai sesi piket berikutnya"
-        >
-          <i class="fa-solid fa-plus text-kse-primary text-xs"></i> Piket ke-${nextSession} (1 Jam)
+        <button disabled class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-emerald-800 bg-emerald-50/70 border border-emerald-200 cursor-not-allowed">
+          <i class="fa-solid fa-check text-emerald-600 text-[11px]"></i> Sudah Piket
         </button>
       `;
     } else {
       statusBadgeHtml = `
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
           <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-          <span>Belum Piket (0/${MAX_PIKET_PER_DAY})</span>
+          <span>Belum Piket</span>
         </div>
       `;
       actionBtnHtml = `
@@ -867,7 +837,7 @@ function renderTable(data, todayHari, state) {
           onclick="mulaiAbsen(${beswan.id})"
           class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Masuk
+          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Mulai Piket (1 Jam)
         </button>
       `;
     }
@@ -923,7 +893,7 @@ function renderCards(data, todayHari, state) {
       statusBadge = `
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
           <i class="fa-regular fa-clock text-amber-600"></i>
-          <span>Piket ke-${active.session}: <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span></span>
+          <span>Sedang Piket: <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span></span>
         </span>
       `;
       actionBtn = `
@@ -931,39 +901,24 @@ function renderCards(data, todayHari, state) {
           onclick="bukaModalBatalkan(${beswan.id})"
           class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50/50 hover:bg-rose-50 border border-rose-200 flex items-center justify-center gap-2 active:scale-[0.99] transition"
         >
-          <i class="fa-solid fa-xmark text-xs"></i> Batalkan Sesi ${active.session}
+          <i class="fa-solid fa-xmark text-xs"></i> Batalkan Piket
         </button>
       `;
-    } else if (completedCount >= MAX_PIKET_PER_DAY) {
+    } else if (completedCount > 0) {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-400">
-          <i class="fa-solid fa-circle-check text-emerald-600"></i> 3/3 Selesai (Lengkap)
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai Piket
         </span>
       `;
       actionBtn = `
         <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50/60 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-2">
-          <i class="fa-solid fa-check-double text-emerald-600"></i> Selesai (Maksimal 3x Piket Hari Ini)
-        </button>
-      `;
-    } else if (completedCount > 0) {
-      const nextSession = completedCount + 1;
-      statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-circle-check text-emerald-600"></i> ${completedCount}/${MAX_PIKET_PER_DAY} Selesai
-        </span>
-      `;
-      actionBtn = `
-        <button
-          onclick="mulaiAbsen(${beswan.id})"
-          class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-kse-primary bg-[#FAF7CC] hover:bg-[#F5F1B5] border border-kse-secondary active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs transition"
-        >
-          <i class="fa-solid fa-plus text-kse-primary"></i> + Mulai Piket ke-${nextSession} (1 Jam)
+          <i class="fa-solid fa-check text-emerald-600"></i> Sudah Piket Hari Ini
         </button>
       `;
     } else {
       statusBadge = `
         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
-          Belum Piket (0/${MAX_PIKET_PER_DAY})
+          Belum Piket
         </span>
       `;
       actionBtn = `
@@ -971,23 +926,22 @@ function renderCards(data, todayHari, state) {
           onclick="mulaiAbsen(${beswan.id})"
           class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs transition"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Absen Masuk
+          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Mulai Piket (1 Jam)
         </button>
       `;
     }
 
     let historyHtml = '';
     if (completedCount > 0) {
-      const sessionTags = rec.sessions.map(s => `
-        <span class="text-[10px] ${s.synced ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-300'} px-1.5 py-0.5 rounded border font-mono inline-flex items-center gap-1">
-          <span>Sesi ${s.session}: ${(s.jamMasuk || '').substring(0, 5)} - ${(s.jamSelesai || '').substring(0, 5)}</span>
-          ${s.synced ? '<i class="fa-solid fa-check text-[9px] text-emerald-600" title="Tersinkron ke Google Sheets"></i>' : '<i class="fa-solid fa-cloud-arrow-up text-[9px] text-amber-600 animate-pulse" title="Menunggu sinkronisasi"></i>'}
-        </span>
-      `).join('');
+      const sess = rec.sessions[0];
+      const timeRange = (sess && sess.jamMasuk && sess.jamSelesai) ? `${sess.jamMasuk.substring(0, 5)} - ${sess.jamSelesai.substring(0, 5)}` : '60 Menit';
       historyHtml = `
-        <div class="flex flex-wrap items-center gap-1.5 py-1 text-xs">
-          <span class="text-[11px] text-gray-500">Riwayat:</span>
-          ${sessionTags}
+        <div class="flex items-center gap-2 py-1 text-xs">
+          <span class="text-[11px] text-gray-500">Waktu Kehadiran:</span>
+          <span class="text-[10px] ${sess && sess.synced ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-300'} px-2 py-0.5 rounded border font-mono inline-flex items-center gap-1.5">
+            <span>${timeRange}</span>
+            ${sess && sess.synced ? '<i class="fa-solid fa-circle-check text-[9px] text-emerald-600" title="Tersinkronkan ke Sheets"></i>' : '<i class="fa-solid fa-cloud-arrow-up text-[9px] text-amber-600 animate-pulse" title="Menunggu sinkronisasi"></i>'}
+          </span>
         </div>
       `;
     }

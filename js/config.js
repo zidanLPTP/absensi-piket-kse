@@ -5,11 +5,11 @@
  */
 
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3Dm1uUyNBcmMXTDx2xjYMfJTrQXwnV3AV88sAZcB_yOu-mDwmbwvDb1AnbWErqJzo/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDHJtRcsndRR-IPg__pK76MEzNy0hEXxr2FwcaiMsbEE52T1If8vgxhHkMg4INbOsn/exec";
 
 
 // 60 Menit (3600 Detik)
-const COUNTDOWN_DURATION_SECONDS = 3600;
+const COUNTDOWN_DURATION_SECONDS = 60;
 
 // Nama Hari & Bulan
 const HARI_MAP = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
