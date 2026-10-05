@@ -9,7 +9,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDHJtRcsndRR
 
 
 // 60 Menit (3600 Detik)
-const COUNTDOWN_DURATION_SECONDS = 60;
+const COUNTDOWN_DURATION_SECONDS = 3600;
 
 // Nama Hari & Bulan
 const HARI_MAP = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
