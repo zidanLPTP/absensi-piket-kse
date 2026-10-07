@@ -43,13 +43,16 @@ function doGet(e) {
         var rowStatus = String(values[i][4] || "").trim();
 
         // Hanya sertakan rekaman yang tanggalnya sesuai hari ini dan berstatus hadir
-        if (rowTgl === targetTanggal && rowStatus.toLowerCase().indexOf("hadir") !== -1) {
+        if (
+          rowTgl === targetTanggal &&
+          rowStatus.toLowerCase().indexOf("hadir") !== -1
+        ) {
           attendedList.push({
             nama: rowNama,
             divisi: rowDivisi,
             hari: rowHari,
             tanggal: rowTgl,
-            status: rowStatus
+            status: rowStatus,
           });
         }
       }
@@ -60,14 +63,14 @@ function doGet(e) {
         status: "success",
         tanggal: targetTanggal,
         attended: attendedList,
-        count: attendedList.length
+        count: attendedList.length,
       }),
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(
       JSON.stringify({
         status: "error",
-        message: err.toString()
+        message: err.toString(),
       }),
     ).setMimeType(ContentService.MimeType.JSON);
   }
@@ -199,7 +202,9 @@ function doPost(e) {
     if (lastRow > 1) {
       var existingValues = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
       for (var r = 0; r < existingValues.length; r++) {
-        var exNama = String(existingValues[r][0] || "").toLowerCase().trim();
+        var exNama = String(existingValues[r][0] || "")
+          .toLowerCase()
+          .trim();
         var exTgl = existingValues[r][3];
         if (exTgl instanceof Date) {
           exTgl = Utilities.formatDate(exTgl, "Asia/Jakarta", "yyyy-MM-dd");
@@ -220,7 +225,9 @@ function doPost(e) {
 
     for (var k = 0; k < rowsToAppend.length; k++) {
       var candidate = rowsToAppend[k];
-      var candidateNama = String(candidate[0] || "").toLowerCase().trim();
+      var candidateNama = String(candidate[0] || "")
+        .toLowerCase()
+        .trim();
       var candidateTgl = String(candidate[3] || "").trim();
       if (candidateTgl.length >= 10 && candidateTgl.indexOf("-") === 4) {
         candidateTgl = candidateTgl.substring(0, 10);
@@ -262,7 +269,9 @@ function doPost(e) {
         skippedDuplicates: duplicateCount,
         message:
           finalRowsToAppend.length > 0
-            ? "Presensi berhasil dicatat (" + finalRowsToAppend.length + " data)"
+            ? "Presensi berhasil dicatat (" +
+              finalRowsToAppend.length +
+              " data)"
             : "Data presensi sudah tercatat sebelumnya (tidak ada duplikasi)",
       }),
     ).setMimeType(ContentService.MimeType.JSON);
@@ -310,7 +319,9 @@ function buatTabRekapBulanan() {
   // 1. Judul Banner Header
   sheet.getRange("A1:G1").merge();
   var titleCell = sheet.getRange("A1");
-  titleCell.setValue("REKAPITULASI KEHADIRAN PIKET SEKRETARIAT - PAGUYUBAN KSE UNRI");
+  titleCell.setValue(
+    "REKAPITULASI KEHADIRAN PIKET SEKRETARIAT - PAGUYUBAN KSE UNRI",
+  );
   titleCell.setBackground("#004834");
   titleCell.setFontColor("#FFFFFF");
   titleCell.setFontWeight("bold");
@@ -321,17 +332,45 @@ function buatTabRekapBulanan() {
   sheet.setRowHeight(1, 38);
 
   // 2. Kotak Kontrol Periode (Baris 2)
-  sheet.getRange("B2").setValue("Periode Mulai (YYYY-MM-DD):").setFontWeight("bold").setHorizontalAlignment("right");
-  sheet.getRange("C2").setValue("2026-09-16").setHorizontalAlignment("center").setBackground("#FAF7CC").setFontWeight("bold");
-  sheet.getRange("D2").setValue("Periode Selesai (YYYY-MM-DD):").setFontWeight("bold").setHorizontalAlignment("right");
-  sheet.getRange("E2").setValue("2026-10-15").setHorizontalAlignment("center").setBackground("#FAF7CC").setFontWeight("bold");
-  sheet.getRange("F2").setValue("Ubah tanggal di C2 & E2 untuk mereset & menghitung otomatis periode berikutnya.")
-    .setFontColor("#555555").setFontStyle("italic").setFontSize(9);
+  sheet
+    .getRange("B2")
+    .setValue("Periode Mulai (YYYY-MM-DD):")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("right");
+  sheet
+    .getRange("C2")
+    .setValue("2026-09-16")
+    .setHorizontalAlignment("center")
+    .setBackground("#FAF7CC")
+    .setFontWeight("bold");
+  sheet
+    .getRange("D2")
+    .setValue("Periode Selesai (YYYY-MM-DD):")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("right");
+  sheet
+    .getRange("E2")
+    .setValue("2026-10-15")
+    .setHorizontalAlignment("center")
+    .setBackground("#FAF7CC")
+    .setFontWeight("bold");
+  sheet
+    .getRange("F2")
+    .setValue(
+      "Ubah tanggal di C2 & E2 untuk mereset & menghitung otomatis periode berikutnya.",
+    )
+    .setFontColor("#555555")
+    .setFontStyle("italic")
+    .setFontSize(9);
 
   // Border aksen emas untuk input tanggal C2 & E2
   var dateBorder = SpreadsheetApp.BorderStyle.SOLID_MEDIUM;
-  sheet.getRange("C2").setBorder(true, true, true, true, null, null, "#EEB319", dateBorder);
-  sheet.getRange("E2").setBorder(true, true, true, true, null, null, "#EEB319", dateBorder);
+  sheet
+    .getRange("C2")
+    .setBorder(true, true, true, true, null, null, "#EEB319", dateBorder);
+  sheet
+    .getRange("E2")
+    .setBorder(true, true, true, true, null, null, "#EEB319", dateBorder);
   sheet.setRowHeight(2, 30);
   sheet.setRowHeight(3, 10); // Jarak spasi kosong baris 3
 
@@ -343,7 +382,7 @@ function buatTabRekapBulanan() {
     "Jadwal Piket",
     "Target Piket",
     "Jumlah Hadir",
-    "Status Evaluasi"
+    "Status Evaluasi",
   ];
   sheet.getRange(4, 1, 1, headers.length).setValues([headers]);
 
@@ -355,78 +394,489 @@ function buatTabRekapBulanan() {
   tableHeaderRange.setFontFamily("Montserrat");
   tableHeaderRange.setHorizontalAlignment("center");
   tableHeaderRange.setVerticalAlignment("middle");
-  tableHeaderRange.setBorder(null, null, true, null, null, null, "#EEB319", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  tableHeaderRange.setBorder(
+    null,
+    null,
+    true,
+    null,
+    null,
+    null,
+    "#EEB319",
+    SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+  );
   sheet.setRowHeight(4, 34);
 
   // 4. Master Data 67 Beswan KSE UNRI
   var beswanList = [
-    { id: 1, nama: "Ilham Radhifa", divisi: "Badan Pengurus Harian (BPH)", hari: "Selasa, Rabu, Sabtu", target: 12 },
-    { id: 2, nama: "Fernando Situmorang", divisi: "Badan Pengurus Harian (BPH)", hari: "Senin, Kamis, Jumat", target: 12 },
-    { id: 3, nama: "Raissa Nabila Putri Riski", divisi: "Badan Pengurus Harian (BPH)", hari: "Senin, Selasa, Jumat", target: 12 },
-    { id: 4, nama: "Ainesis Siringo Ringo", divisi: "Badan Pengurus Harian (BPH)", hari: "Rabu, Jumat, Sabtu", target: 12 },
-    { id: 5, nama: "Renna Mailina", divisi: "Badan Pengurus Harian (BPH)", hari: "Senin, Rabu, Kamis", target: 12 },
-    { id: 6, nama: "Muhammad Renaldy Saputra", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Senin, Jumat", target: 8 },
-    { id: 7, nama: "Najwa Syafiqah", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Jumat", target: 4 },
-    { id: 8, nama: "Hameezah", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Senin", target: 4 },
-    { id: 9, nama: "Halya Febriani", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Kamis", target: 4 },
-    { id: 10, nama: "Adelia", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Sabtu", target: 4 },
-    { id: 11, nama: "Citra Melamedika", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Jumat", target: 4 },
-    { id: 12, nama: "Azizah Zahra Nurwani", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Rabu", target: 4 },
-    { id: 13, nama: "Mufidli Halim", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Selasa", target: 4 },
-    { id: 14, nama: "Hanifah Ryanti", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Sabtu", target: 4 },
-    { id: 15, nama: "Tanziilal Azizirrahim", divisi: "Pendidikan dan Pelatihan (DIKLAT)", hari: "Jumat", target: 4 },
-    { id: 16, nama: "Deno Rangga Alif", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Senin, Selasa", target: 8 },
-    { id: 17, nama: "Sarah Filia Hutasoit", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Selasa", target: 4 },
-    { id: 18, nama: "Hanna Rida Yolavani Pandiangan", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Senin", target: 4 },
-    { id: 19, nama: "Salsa Nabila Zahira", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Rabu", target: 4 },
-    { id: 20, nama: "Ghinna Faadhilah Husni", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Senin", target: 4 },
-    { id: 21, nama: "Novia Putri Tiefi", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Selasa", target: 4 },
-    { id: 22, nama: "Ade Gheriya Rahima Br. Pasaribu", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Jumat", target: 4 },
-    { id: 23, nama: "Dzakira Syarqiya", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Kamis", target: 4 },
-    { id: 24, nama: "Muhammad Jadid Ghifari", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Rabu", target: 4 },
-    { id: 25, nama: "Rahma Cahyani", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Rabu", target: 4 },
-    { id: 26, nama: "Latifah Hanum", divisi: "Komunikasi dan Informasi (KOMINFO)", hari: "Selasa", target: 4 },
-    { id: 27, nama: "Rahmah Azzahra", divisi: "Rumah Gurindam (RAGAM)", hari: "Kamis, Sabtu", target: 8 },
-    { id: 28, nama: "Regina Wulandari", divisi: "Rumah Gurindam (RAGAM)", hari: "Kamis", target: 4 },
-    { id: 29, nama: "Lili", divisi: "Rumah Gurindam (RAGAM)", hari: "Kamis", target: 4 },
-    { id: 30, nama: "Herma Desviona", divisi: "Rumah Gurindam (RAGAM)", hari: "Selasa", target: 4 },
-    { id: 31, nama: "Odelia Rejoice Moranda Sibuea", divisi: "Rumah Gurindam (RAGAM)", hari: "Sabtu", target: 4 },
-    { id: 32, nama: "Rian Setiawan", divisi: "Rumah Gurindam (RAGAM)", hari: "Selasa", target: 4 },
-    { id: 33, nama: "Maulya Luthfiana Fathny", divisi: "Rumah Gurindam (RAGAM)", hari: "Sabtu", target: 4 },
-    { id: 34, nama: "Zulkifli Boy Simatupang", divisi: "Rumah Gurindam (RAGAM)", hari: "Sabtu", target: 4 },
-    { id: 35, nama: "Jesika Maretta Br Manullang", divisi: "Rumah Gurindam (RAGAM)", hari: "Selasa", target: 4 },
-    { id: 36, nama: "Maya Tri Putri", divisi: "Rumah Gurindam (RAGAM)", hari: "Sabtu", target: 4 },
-    { id: 37, nama: "Muhammad Erwa Sandyka", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Kamis, Sabtu", target: 8 },
-    { id: 38, nama: "Mitraturahmah", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Rabu", target: 4 },
-    { id: 39, nama: "Jannati Zerlina", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Selasa", target: 4 },
-    { id: 40, nama: "Annisa Nurul Ramadhani", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Jumat", target: 4 },
-    { id: 41, nama: "Sisca Rahma Alya", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Sabtu", target: 4 },
-    { id: 42, nama: "Thalita Anindya Ahnaf", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Rabu", target: 4 },
-    { id: 43, nama: "Yusri Arya Pratama", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Kamis", target: 4 },
-    { id: 44, nama: "Faris Alphard", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Rabu", target: 4 },
-    { id: 45, nama: "Diva Nura Asmara", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Senin", target: 4 },
-    { id: 46, nama: "Fahmi Agustiadi Idris", divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)", hari: "Rabu", target: 4 },
-    { id: 47, nama: "Hikmah Syahrini", divisi: "Community Development (COMDEV)", hari: "Kamis, Jumat", target: 8 },
-    { id: 48, nama: "Alysa Pardalana Febia", divisi: "Community Development (COMDEV)", hari: "Rabu", target: 4 },
-    { id: 49, nama: "Verronica Allysia Tampubolon", divisi: "Community Development (COMDEV)", hari: "Senin", target: 4 },
-    { id: 50, nama: "Tengku Risya Dwi Julietha", divisi: "Community Development (COMDEV)", hari: "Senin", target: 4 },
-    { id: 51, nama: "Naufal Labib Ramadhani", divisi: "Community Development (COMDEV)", hari: "Sabtu", target: 4 },
-    { id: 52, nama: "Hadelia Clara", divisi: "Community Development (COMDEV)", hari: "Kamis", target: 4 },
-    { id: 53, nama: "Siti Tri Nopianti", divisi: "Community Development (COMDEV)", hari: "Jumat", target: 4 },
-    { id: 54, nama: "Sabda Yohana Harita", divisi: "Community Development (COMDEV)", hari: "Kamis", target: 4 },
-    { id: 55, nama: "Fadhila Fahtur Rahman", divisi: "Community Development (COMDEV)", hari: "Jumat", target: 4 },
-    { id: 56, nama: "Christina Geovani Sinaga", divisi: "Community Development (COMDEV)", hari: "Selasa", target: 4 },
-    { id: 57, nama: "Teguh Febryano", divisi: "Community Development (COMDEV)", hari: "Senin", target: 4 },
-    { id: 58, nama: "Miranda Sinaga", divisi: "Internal Relation (IR)", hari: "Rabu, Kamis", target: 8 },
-    { id: 59, nama: "Fanny Marissa Putri", divisi: "Internal Relation (IR)", hari: "Jumat", target: 4 },
-    { id: 60, nama: "Yunika Nuuru Afriza", divisi: "Internal Relation (IR)", hari: "Selasa", target: 4 },
-    { id: 61, nama: "Hana Revalina Situmorang", divisi: "Internal Relation (IR)", hari: "Jumat", target: 4 },
-    { id: 62, nama: "Neldia Zamriati", divisi: "Internal Relation (IR)", hari: "Selasa", target: 4 },
-    { id: 63, nama: "Febriani", divisi: "Internal Relation (IR)", hari: "Rabu", target: 4 },
-    { id: 64, nama: "Arinil Haqqoh", divisi: "Internal Relation (IR)", hari: "Kamis", target: 4 },
-    { id: 65, nama: "Fathin Ahmad Zidan", divisi: "Internal Relation (IR)", hari: "Senin", target: 4 },
-    { id: 66, nama: "Jose Earl Parulian Manurung", divisi: "Internal Relation (IR)", hari: "Sabtu", target: 4 },
-    { id: 67, nama: "Afry Dearny Sinaga", divisi: "Internal Relation (IR)", hari: "Sabtu", target: 4 },
+    {
+      id: 1,
+      nama: "Ilham Radhifa",
+      divisi: "Badan Pengurus Harian (BPH)",
+      hari: "Selasa, Rabu, Sabtu",
+      target: 12,
+    },
+    {
+      id: 2,
+      nama: "Fernando Situmorang",
+      divisi: "Badan Pengurus Harian (BPH)",
+      hari: "Senin, Kamis, Jumat",
+      target: 12,
+    },
+    {
+      id: 3,
+      nama: "Raissa Nabila Putri Riski",
+      divisi: "Badan Pengurus Harian (BPH)",
+      hari: "Senin, Selasa, Jumat",
+      target: 12,
+    },
+    {
+      id: 4,
+      nama: "Ainesis Siringo Ringo",
+      divisi: "Badan Pengurus Harian (BPH)",
+      hari: "Rabu, Jumat, Sabtu",
+      target: 12,
+    },
+    {
+      id: 5,
+      nama: "Renna Mailina",
+      divisi: "Badan Pengurus Harian (BPH)",
+      hari: "Senin, Rabu, Kamis",
+      target: 12,
+    },
+    {
+      id: 6,
+      nama: "Muhammad Renaldy Saputra",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Senin, Jumat",
+      target: 8,
+    },
+    {
+      id: 7,
+      nama: "Najwa Syafiqah",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 8,
+      nama: "Hameezah",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 9,
+      nama: "Halya Febriani",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 10,
+      nama: "Adelia",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 11,
+      nama: "Citra Melamedika",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 12,
+      nama: "Azizah Zahra Nurwani",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 13,
+      nama: "Mufidli Halim",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 14,
+      nama: "Hanifah Ryanti",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 15,
+      nama: "Tanziilal Azizirrahim",
+      divisi: "Pendidikan dan Pelatihan (DIKLAT)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 16,
+      nama: "Deno Rangga Alif",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Senin, Selasa",
+      target: 8,
+    },
+    {
+      id: 17,
+      nama: "Sarah Filia Hutasoit",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 18,
+      nama: "Hanna Rida Yolavani Pandiangan",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 19,
+      nama: "Salsa Nabila Zahira",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 20,
+      nama: "Ghinna Faadhilah Husni",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 21,
+      nama: "Novia Putri Tiefi",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 22,
+      nama: "Ade Gheriya Rahima Br. Pasaribu",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 23,
+      nama: "Dzakira Syarqiya",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 24,
+      nama: "Muhammad Jadid Ghifari",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 25,
+      nama: "Rahma Cahyani",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 26,
+      nama: "Latifah Hanum",
+      divisi: "Komunikasi dan Informasi (KOMINFO)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 27,
+      nama: "Rahmah Azzahra",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Kamis, Sabtu",
+      target: 8,
+    },
+    {
+      id: 28,
+      nama: "Regina Wulandari",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 29,
+      nama: "Lili",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 30,
+      nama: "Herma Desviona",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 31,
+      nama: "Odelia Rejoice Moranda Sibuea",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 32,
+      nama: "Rian Setiawan",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 33,
+      nama: "Maulya Luthfiana Fathny",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 34,
+      nama: "Zulkifli Boy Simatupang",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 35,
+      nama: "Jesika Maretta Br Manullang",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 36,
+      nama: "Maya Tri Putri",
+      divisi: "Rumah Gurindam (RAGAM)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 37,
+      nama: "Muhammad Erwa Sandyka",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Kamis, Sabtu",
+      target: 8,
+    },
+    {
+      id: 38,
+      nama: "Mitraturahmah",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 39,
+      nama: "Jannati Zerlina",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 40,
+      nama: "Annisa Nurul Ramadhani",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 41,
+      nama: "Sisca Rahma Alya",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 42,
+      nama: "Thalita Anindya Ahnaf",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 43,
+      nama: "Yusri Arya Pratama",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 44,
+      nama: "Faris Alphard",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 45,
+      nama: "Diva Nura Asmara",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 46,
+      nama: "Fahmi Agustiadi Idris",
+      divisi: "Ekonomi, Bisnis, dan Partnership (EKOBIS)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 47,
+      nama: "Hikmah Syahrini",
+      divisi: "Community Development (COMDEV)",
+      hari: "Kamis, Jumat",
+      target: 8,
+    },
+    {
+      id: 48,
+      nama: "Alysa Pardalana Febia",
+      divisi: "Community Development (COMDEV)",
+      hari: "Rabu",
+      target: 4,
+    },
+    {
+      id: 49,
+      nama: "Verronica Allysia Tampubolon",
+      divisi: "Community Development (COMDEV)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 50,
+      nama: "Tengku Risya Dwi Julietha",
+      divisi: "Community Development (COMDEV)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 51,
+      nama: "Naufal Labib Ramadhani",
+      divisi: "Community Development (COMDEV)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 52,
+      nama: "Hadelia Clara",
+      divisi: "Community Development (COMDEV)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 53,
+      nama: "Siti Tri Nopianti",
+      divisi: "Community Development (COMDEV)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 54,
+      nama: "Sabda Yohana Harita",
+      divisi: "Community Development (COMDEV)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 55,
+      nama: "Fadhila Fahtur Rahman",
+      divisi: "Community Development (COMDEV)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 56,
+      nama: "Christina Geovani Sinaga",
+      divisi: "Community Development (COMDEV)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 57,
+      nama: "Teguh Febryano",
+      divisi: "Community Development (COMDEV)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 58,
+      nama: "Miranda Sinaga",
+      divisi: "Internal Relation (IR)",
+      hari: "Rabu, Kamis",
+      target: 8,
+    },
+    {
+      id: 59,
+      nama: "Fanny Marissa Putri",
+      divisi: "Internal Relation (IR)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 60,
+      nama: "Yunika Nuuru Afriza",
+      divisi: "Internal Relation (IR)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 61,
+      nama: "Hana Revalina Situmorang",
+      divisi: "Internal Relation (IR)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 62,
+      nama: "Neldia Zamriati",
+      divisi: "Internal Relation (IR)",
+      hari: "Selasa",
+      target: 4,
+    },
+    {
+      id: 63,
+      nama: "Febriani",
+      divisi: "Internal Relation (IR)",
+      hari: "Jumat",
+      target: 4,
+    },
+    {
+      id: 64,
+      nama: "Arinil Haqqoh",
+      divisi: "Internal Relation (IR)",
+      hari: "Kamis",
+      target: 4,
+    },
+    {
+      id: 65,
+      nama: "Fathin Ahmad Zidan",
+      divisi: "Internal Relation (IR)",
+      hari: "Senin",
+      target: 4,
+    },
+    {
+      id: 66,
+      nama: "Jose Earl Parulian Manurung",
+      divisi: "Internal Relation (IR)",
+      hari: "Sabtu",
+      target: 4,
+    },
+    {
+      id: 67,
+      nama: "Afry Dearny Sinaga",
+      divisi: "Internal Relation (IR)",
+      hari: "Sabtu",
+      target: 4,
+    },
   ];
 
   var rowValues = [];
@@ -436,11 +886,21 @@ function buatTabRekapBulanan() {
 
     // Formula COUNTIFS dinamis mengacu ke Tanggal Mulai ($C$2) dan Tanggal Selesai ($E$2)
     var formulaCount =
-      '=COUNTIFS(\'Data Presensi\'!$A:$A, B' + rowIdx + ', \'Data Presensi\'!$D:$D, ">="&$C$2, \'Data Presensi\'!$D:$D, "<="&$E$2)';
+      "=COUNTIFS('Data Presensi'!$A:$A, B" +
+      rowIdx +
+      ", 'Data Presensi'!$D:$D, \">=\"&$C$2, 'Data Presensi'!$D:$D, \"<=\"&$E$2)";
 
     // Formula Status Evaluasi
     var formulaStatus =
-      '=IF(F' + rowIdx + '>=E' + rowIdx + ', "Memenuhi Target", "Kurang " & (E' + rowIdx + '-F' + rowIdx + ') & " Piket")';
+      "=IF(F" +
+      rowIdx +
+      ">=E" +
+      rowIdx +
+      ', "Memenuhi Target", "Kurang " & (E' +
+      rowIdx +
+      "-F" +
+      rowIdx +
+      ') & " Piket")';
 
     rowValues.push([
       b.id,
@@ -449,7 +909,7 @@ function buatTabRekapBulanan() {
       b.hari,
       b.target,
       formulaCount,
-      formulaStatus
+      formulaStatus,
     ]);
   }
 
@@ -462,7 +922,7 @@ function buatTabRekapBulanan() {
 
   // Format perataan (alignment)
   sheet.getRange(5, 1, rowValues.length, 1).setHorizontalAlignment("center"); // No
-  sheet.getRange(5, 2, rowValues.length, 2).setHorizontalAlignment("left");   // Nama & Divisi
+  sheet.getRange(5, 2, rowValues.length, 2).setHorizontalAlignment("left"); // Nama & Divisi
   sheet.getRange(5, 4, rowValues.length, 4).setHorizontalAlignment("center"); // Jadwal, Target, Jumlah Hadir, Status
 
   // Tinggi baris dan kunci 4 baris pertama agar header tetap terlihat saat scroll
@@ -481,6 +941,6 @@ function buatTabRekapBulanan() {
   ui.alert(
     "Berhasil!",
     "Tab 'Rekap Kehadiran' telah selesai dibuat/diperbarui dengan 67 data beswan.\n\nAnda dapat mengganti tanggal periode di Cell C2 dan E2 kapan saja untuk mereset dan menghitung periode berikutnya secara instan.",
-    ui.ButtonSet.OK
+    ui.ButtonSet.OK,
   );
 }
