@@ -8,15 +8,69 @@
  *    kehadiran bulanan (misal: 16 Sep - 15 Okt) dengan rumus dinamis COUNTIFS.
  */
 
-// Pengecekan status Web App via browser (GET)
+// Membaca data kehadiran hari ini untuk sinkronisasi multi-device (GET)
 function doGet(e) {
-  return ContentService.createTextOutput(
-    JSON.stringify({
-      status: "success",
-      message:
-        "API Presensi Piket KSE UNRI Aktif dan Siap Menerima Data Presensi.",
-    }),
-  ).setMimeType(ContentService.MimeType.JSON);
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = "Data Presensi";
+    var sheet =
+      ss.getSheetByName(sheetName) ||
+      ss.getSheetByName("Sheet1") ||
+      ss.getActiveSheet();
+
+    var targetTanggal =
+      (e && e.parameter && e.parameter.tanggal) ||
+      Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd");
+
+    var attendedList = [];
+
+    if (sheet && sheet.getLastRow() > 1) {
+      var lastRow = sheet.getLastRow();
+      var values = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+      for (var i = 0; i < values.length; i++) {
+        var rowNama = String(values[i][0] || "").trim();
+        var rowDivisi = String(values[i][1] || "").trim();
+        var rowHari = String(values[i][2] || "").trim();
+        var rowTgl = values[i][3];
+        if (rowTgl instanceof Date) {
+          rowTgl = Utilities.formatDate(rowTgl, "Asia/Jakarta", "yyyy-MM-dd");
+        } else {
+          rowTgl = String(rowTgl || "").trim();
+          if (rowTgl.length >= 10 && rowTgl.indexOf("-") === 4) {
+            rowTgl = rowTgl.substring(0, 10);
+          }
+        }
+        var rowStatus = String(values[i][4] || "").trim();
+
+        // Hanya sertakan rekaman yang tanggalnya sesuai hari ini dan berstatus hadir
+        if (rowTgl === targetTanggal && rowStatus.toLowerCase().indexOf("hadir") !== -1) {
+          attendedList.push({
+            nama: rowNama,
+            divisi: rowDivisi,
+            hari: rowHari,
+            tanggal: rowTgl,
+            status: rowStatus
+          });
+        }
+      }
+    }
+
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "success",
+        tanggal: targetTanggal,
+        attended: attendedList,
+        count: attendedList.length
+      }),
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "error",
+        message: err.toString()
+      }),
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 // Menangani data presensi masuk dari web (POST) - Mendukung Single & Batch Processing
@@ -138,13 +192,56 @@ function doPost(e) {
       rowsToAppend.push([nama, divisi, hariAktual, tanggal, status]);
     }
 
+    // Cek duplikasi di Google Sheets sebelum menulis data (Anti-Duplikasi Multi-Device)
+    var lastRow = sheet.getLastRow();
+    var existingSet = {};
+
+    if (lastRow > 1) {
+      var existingValues = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+      for (var r = 0; r < existingValues.length; r++) {
+        var exNama = String(existingValues[r][0] || "").toLowerCase().trim();
+        var exTgl = existingValues[r][3];
+        if (exTgl instanceof Date) {
+          exTgl = Utilities.formatDate(exTgl, "Asia/Jakarta", "yyyy-MM-dd");
+        } else {
+          exTgl = String(exTgl || "").trim();
+          if (exTgl.length >= 10 && exTgl.indexOf("-") === 4) {
+            exTgl = exTgl.substring(0, 10);
+          }
+        }
+        if (exNama && exTgl) {
+          existingSet[exNama + "_" + exTgl] = true;
+        }
+      }
+    }
+
+    var finalRowsToAppend = [];
+    var duplicateCount = 0;
+
+    for (var k = 0; k < rowsToAppend.length; k++) {
+      var candidate = rowsToAppend[k];
+      var candidateNama = String(candidate[0] || "").toLowerCase().trim();
+      var candidateTgl = String(candidate[3] || "").trim();
+      if (candidateTgl.length >= 10 && candidateTgl.indexOf("-") === 4) {
+        candidateTgl = candidateTgl.substring(0, 10);
+      }
+      var candidateKey = candidateNama + "_" + candidateTgl;
+
+      if (!existingSet[candidateKey]) {
+        finalRowsToAppend.push(candidate);
+        existingSet[candidateKey] = true; // Cegah duplikat ganda dalam 1 batch payload
+      } else {
+        duplicateCount++;
+      }
+    }
+
     // Tulis baris secara atomik & cepat (Bulk Writing via setValues)
-    if (rowsToAppend.length > 0) {
+    if (finalRowsToAppend.length > 0) {
       var startRow = sheet.getLastRow() + 1;
-      var numRows = rowsToAppend.length;
+      var numRows = finalRowsToAppend.length;
 
       var dataRange = sheet.getRange(startRow, 1, numRows, 5);
-      dataRange.setValues(rowsToAppend);
+      dataRange.setValues(finalRowsToAppend);
       dataRange.setFontFamily("Montserrat");
       dataRange.setFontSize(10);
       dataRange.setVerticalAlignment("middle");
@@ -161,8 +258,12 @@ function doPost(e) {
     return ContentService.createTextOutput(
       JSON.stringify({
         status: "success",
-        count: rowsToAppend.length,
-        message: "Presensi berhasil dicatat (" + rowsToAppend.length + " data)",
+        count: finalRowsToAppend.length,
+        skippedDuplicates: duplicateCount,
+        message:
+          finalRowsToAppend.length > 0
+            ? "Presensi berhasil dicatat (" + finalRowsToAppend.length + " data)"
+            : "Data presensi sudah tercatat sebelumnya (tidak ada duplikasi)",
       }),
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {

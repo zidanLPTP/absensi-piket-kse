@@ -129,12 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
   renderApp();
   startLiveTicker();
   processSyncQueue();
+  fetchTodayAttendanceFromCloud(); // Tarik data cloud saat pertama kali halaman dimuat
 
   // Event listener deteksi online/offline
   window.addEventListener('online', () => {
     updateSyncIndicatorUI();
-    showToast('Koneksi internet pulih. Memproses antrean sinkronisasi...', 'info');
+    showToast('Koneksi internet pulih. Menyelaraskan data presensi...', 'info');
     processSyncQueue();
+    fetchTodayAttendanceFromCloud();
   });
 
   window.addEventListener('offline', () => {
@@ -142,13 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Koneksi terputus. Data presensi tetap tersimpan aman di antrean lokal.', 'warning');
   });
 
-  // Background worker tiap 30 detik untuk memastikan tidak ada data yang tertunda
+  // Background worker tiap 30 detik untuk sync antrean & polling cloud multi-device
   setInterval(() => {
-    if (!isProcessingQueue && navigator.onLine) {
-      const queue = getSyncQueue();
-      if (queue.some(item => item.status === 'pending')) {
-        processSyncQueue();
+    if (navigator.onLine) {
+      if (!isProcessingQueue) {
+        const queue = getSyncQueue();
+        if (queue.some(item => item.status === 'pending')) {
+          processSyncQueue();
+        }
       }
+      fetchTodayAttendanceFromCloud();
     }
   }, 30000);
 });
@@ -582,19 +587,86 @@ function syncToGoogleSheets(beswan, sessionObj) {
   processSyncQueue();
 }
 
-function manualTriggerSync() {
+let isFetchingCloud = false;
+
+// Mengambil data kehadiran hari ini dari Google Sheets (Cloud SSoT untuk Multi-Device)
+async function fetchTodayAttendanceFromCloud(isManual = false) {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "ISI_URL_WEB_APP_DISINI") return;
+  if (!navigator.onLine) return;
+  if (isFetchingCloud) return;
+
+  isFetchingCloud = true;
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=today&tanggal=${getTodayDateKey()}&t=${Date.now()}`);
+    const data = await res.json();
+
+    if (data && data.status === 'success' && Array.isArray(data.attended)) {
+      const state = getAttendanceState();
+      let stateChanged = false;
+
+      data.attended.forEach(item => {
+        const itemNama = String(item.nama || "").toLowerCase().trim();
+        const beswan = BESWAN_DATA.find(b => b.nama.toLowerCase().trim() === itemNama);
+        if (beswan) {
+          const rec = normalizeRecord(state[beswan.id]);
+          // Jika di perangkat ini belum tercatat selesai piket hari ini, sinkronkan otomatis dari Cloud!
+          if (rec.sessions.length === 0) {
+            rec.sessions = [{
+              session: 1,
+              startTime: Date.now() - (COUNTDOWN_DURATION_SECONDS * 1000),
+              endTime: Date.now(),
+              jamMasuk: item.jam_masuk || '-',
+              jamSelesai: item.jam_selesai || '-',
+              tanggal: item.tanggal || getTodayDateKey(),
+              synced: true
+            }];
+            rec.activeSession = null;
+            state[beswan.id] = rec;
+            stateChanged = true;
+          } else {
+            // Pastikan flag synced = true
+            if (rec.sessions[0] && !rec.sessions[0].synced) {
+              rec.sessions[0].synced = true;
+              state[beswan.id] = rec;
+              stateChanged = true;
+            }
+          }
+        }
+      });
+
+      if (stateChanged) {
+        saveAttendanceState(state);
+        renderApp();
+      }
+
+      if (isManual) {
+        showToast(`Sinkronisasi berhasil! ${data.attended.length} beswan tercatat hadir di Google Sheets hari ini.`, 'success');
+      }
+    }
+  } catch (err) {
+    console.warn("Gagal mengambil data kehadiran cloud hari ini:", err);
+    if (isManual) {
+      showToast("Gagal memuat data dari cloud. Silakan periksa koneksi internet.", "warning");
+    }
+  } finally {
+    isFetchingCloud = false;
+    updateSyncIndicatorUI();
+  }
+}
+
+async function manualTriggerSync() {
   if (!navigator.onLine) {
     showToast("Perangkat Anda sedang offline. Mohon periksa koneksi internet.", "warning");
     return;
   }
   const queue = getSyncQueue();
   const pendingCount = queue.filter(q => q.status === 'pending').length;
-  if (pendingCount === 0) {
-    showToast("Semua data presensi sudah tersinkronkan ke Google Sheets.", "success");
-    return;
+  if (pendingCount > 0) {
+    showToast(`Menyinkronkan ${pendingCount} antrean data ke Google Sheets...`, "info");
+    await processSyncQueue();
   }
-  showToast(`Menyinkronkan ${pendingCount} antrean data ke Google Sheets...`, "info");
-  processSyncQueue();
+  showToast("Menyelaraskan data presensi terbaru dari Google Sheets...", "info");
+  await fetchTodayAttendanceFromCloud(true);
 }
 
 function updateSyncIndicatorUI() {
