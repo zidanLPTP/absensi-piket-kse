@@ -1135,3 +1135,154 @@ function hideToast() {
   const toast = document.getElementById('toastNotification');
   if (toast) toast.classList.add('hidden');
 }
+
+// ================= SALIN REKAP LAPORAN PIKET HARI INI =================
+function getShortDivisi(divisi) {
+  if (!divisi) return '';
+  const match = divisi.match(/\(([^)]+)\)/);
+  return match ? match[1] : divisi;
+}
+
+function generateLaporanPiketText() {
+  const now = new Date();
+  const hariName = getTodayHariName();
+  const tgl = now.getDate();
+  const bln = BULAN_MAP[now.getMonth()];
+  const thn = now.getFullYear();
+
+  const state = getAttendanceState();
+  const piketList = [];
+  const tidakPiketList = [];
+
+  BESWAN_DATA.forEach(b => {
+    const isToday = isBeswanPiketToday(b, hariName);
+    const rec = normalizeRecord(state[b.id]);
+    const hasAttended = rec.sessions.length > 0;
+    const isActive = rec.activeSession !== null;
+
+    if (hasAttended || isActive) {
+      piketList.push({
+        nama: b.nama,
+        divisi: getShortDivisi(b.divisi),
+        isScheduledToday: isToday,
+        isActive: isActive
+      });
+    } else if (isToday) {
+      tidakPiketList.push({
+        nama: b.nama,
+        divisi: getShortDivisi(b.divisi)
+      });
+    }
+  });
+
+  // Urutkan alfabetis berdasarkan nama agar rapi dan mudah dicari
+  piketList.sort((a, b) => a.nama.localeCompare(b.nama));
+  tidakPiketList.sort((a, b) => a.nama.localeCompare(b.nama));
+
+  let text = 'List Piket ' + hariName + ' pada ' + tgl + ' ' + bln + ' ' + thn + ':\n';
+  if (piketList.length > 0) {
+    piketList.forEach((item, idx) => {
+      let note = '';
+      if (!item.isScheduledToday) note += ' (Di Luar Jadwal)';
+      if (item.isActive) note += ' (Sedang Piket)';
+      text += (idx + 1) + '. ' + item.nama + ' (' + item.divisi + ')' + note + '\n';
+    });
+  } else {
+    text += '- Belum ada yang piket\n';
+  }
+
+  text += '\nList yang tidak piket :\n';
+  if (tidakPiketList.length > 0) {
+    tidakPiketList.forEach((item, idx) => {
+      text += (idx + 1) + '. ' + item.nama + ' (' + item.divisi + ')\n';
+    });
+  } else {
+    const totalScheduledToday = BESWAN_DATA.filter(b => isBeswanPiketToday(b, hariName)).length;
+    if (totalScheduledToday === 0) {
+      text += '- Tidak ada jadwal piket hari ini\n';
+    } else {
+      text += '- Nihil (Semua beswan piket hadir)\n';
+    }
+  }
+
+  return text;
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn("navigator.clipboard gagal, mencoba fallback execCommand:", err);
+    }
+  }
+
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error("Fallback execCommand gagal:", err);
+    return false;
+  }
+}
+
+async function salinLaporanPiketHariIni() {
+  const text = generateLaporanPiketText();
+  const btnIcon = document.getElementById('btnSalinIcon');
+  const btnText = document.getElementById('btnSalinText');
+
+  const copied = await copyTextToClipboard(text);
+
+  if (copied) {
+    if (btnIcon && btnText) {
+      btnIcon.className = "fa-solid fa-check text-kse-secondary";
+      btnText.textContent = "Tersalin!";
+      setTimeout(() => {
+        btnIcon.className = "fa-regular fa-copy text-kse-secondary";
+        btnText.textContent = "Salin Rekap";
+      }, 2500);
+    }
+    showToast("Laporan piket hari ini berhasil disalin ke clipboard! Siap di-paste ke grup WhatsApp.", "success");
+  } else {
+    openRekapModal(text);
+    showToast("Silakan salin teks rekap presensi dari jendela yang terbuka.", "info");
+  }
+}
+
+function openRekapModal(text) {
+  const modal = document.getElementById('rekapLaporanModal');
+  const textarea = document.getElementById('rekapLaporanTextarea');
+  if (!modal || !textarea) return;
+  textarea.value = text || generateLaporanPiketText();
+  modal.classList.remove('hidden');
+}
+
+function closeRekapModal() {
+  const modal = document.getElementById('rekapLaporanModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function copyRekapFromModal() {
+  const textarea = document.getElementById('rekapLaporanTextarea');
+  if (!textarea) return;
+  const copied = await copyTextToClipboard(textarea.value);
+  if (copied) {
+    showToast("Teks rekap presensi berhasil disalin!", "success");
+    closeRekapModal();
+  } else {
+    textarea.focus();
+    textarea.select();
+    showToast("Gagal menyalin otomatis. Silakan tekan Ctrl+C pada teks yang diblok.", "warning");
+  }
+}
+
