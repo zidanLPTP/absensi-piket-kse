@@ -1163,9 +1163,7 @@ function generateLaporanPiketText() {
     if (hasAttended || isActive) {
       piketList.push({
         nama: b.nama,
-        divisi: getShortDivisi(b.divisi),
-        isScheduledToday: isToday,
-        isActive: isActive
+        divisi: getShortDivisi(b.divisi)
       });
     } else if (isToday) {
       tidakPiketList.push({
@@ -1182,10 +1180,7 @@ function generateLaporanPiketText() {
   let text = 'List Piket ' + hariName + ' pada ' + tgl + ' ' + bln + ' ' + thn + ':\n';
   if (piketList.length > 0) {
     piketList.forEach((item, idx) => {
-      let note = '';
-      if (!item.isScheduledToday) note += ' (Di Luar Jadwal)';
-      if (item.isActive) note += ' (Sedang Piket)';
-      text += (idx + 1) + '. ' + item.nama + ' (' + item.divisi + ')' + note + '\n';
+      text += (idx + 1) + '. ' + item.nama + ' (' + item.divisi + ')\n';
     });
   } else {
     text += '- Belum ada yang piket\n';
