@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startLiveTicker();
   processSyncQueue();
   fetchTodayAttendanceFromCloud(); // Tarik data cloud saat pertama kali halaman dimuat
+  renderJadwalTable(); // Inisialisasi tabel piket mingguan
 
   // Event listener deteksi online/offline
   window.addEventListener('online', () => {
@@ -856,7 +857,7 @@ function renderTable(data, todayHari, state) {
     const completedCount = rec.sessions.length;
 
     const tr = document.createElement('tr');
-    tr.className = `transition-colors ${isTodayPiket ? 'row-piket-today font-medium' : 'hover:bg-gray-50'}`;
+    tr.className = `transition-colors ${isTodayPiket ? 'row-piket-today font-medium' : 'hover:bg-slate-50'}`;
 
     let statusBadgeHtml = '';
     let actionBtnHtml = '';
@@ -864,7 +865,7 @@ function renderTable(data, todayHari, state) {
     if (active) {
       const timeLeft = formatRemainingSeconds(active.targetEndTime - Date.now());
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
           <i class="fa-regular fa-clock text-amber-600"></i>
           <span>Sedang Piket (<span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>)</span>
         </div>
@@ -872,7 +873,7 @@ function renderTable(data, todayHari, state) {
       actionBtnHtml = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
-          class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 transition"
+          class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
           title="Batalkan piket"
         >
           <i class="fa-solid fa-xmark text-xs"></i> Batalkan
@@ -885,29 +886,29 @@ function renderTable(data, todayHari, state) {
         ? '<i class="fa-solid fa-circle-check text-emerald-600 text-[10px]" title="Tersinkron ke Google Sheets"></i>' 
         : '<i class="fa-solid fa-cloud-arrow-up text-amber-600 text-[10px] animate-pulse" title="Menunggu sinkronisasi"></i>';
       statusBadgeHtml = `
-        <div class="inline-flex flex-col items-center justify-center text-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
+        <div class="inline-flex flex-col items-center justify-center text-center px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
           <span class="inline-flex items-center gap-1 text-emerald-700 font-bold">
             ${syncMark} Selesai Piket
           </span>
-          <span class="text-[10px] text-gray-500 font-mono" title="Waktu piket: ${timeRange}">${timeRange}</span>
+          <span class="text-[10px] text-slate-500 font-mono" title="Waktu piket: ${timeRange}">${timeRange}</span>
         </div>
       `;
       actionBtnHtml = `
-        <button disabled class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-emerald-800 bg-emerald-50/70 border border-emerald-200 cursor-not-allowed">
+        <button disabled class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed">
           <i class="fa-solid fa-check text-emerald-600 text-[11px]"></i> Sudah Piket
         </button>
       `;
     } else {
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-          <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           <span>Belum Piket</span>
         </div>
       `;
       actionBtnHtml = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs"
+          class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs cursor-pointer active:scale-95"
         >
           <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Mulai Piket (1 Jam)
         </button>
@@ -917,18 +918,23 @@ function renderTable(data, todayHari, state) {
     const hariBadgesHtml = renderJadwalBadges(beswan.hari_piket, todayHari);
 
     tr.innerHTML = `
-      <td class="py-3 px-4 text-center text-xs text-gray-500 font-medium">${beswan.id}</td>
+      <td class="py-3 px-4 text-center text-xs text-slate-400 font-semibold font-mono">${beswan.id}</td>
       <td class="py-3 px-4">
-        <div class="flex flex-col items-start gap-1">
-          <span class="font-semibold text-gray-900 leading-snug break-words">${beswan.nama}</span>
-          <div class="flex flex-wrap items-center gap-1">
-            ${isTodayPiket ? '<span class="inline-block text-[10px] bg-kse-secondary/20 text-kse-earth px-1.5 py-0.2 rounded font-semibold border border-kse-secondary/40">Piket Hari Ini</span>' : ''}
-            ${isBPH ? '<span class="inline-block text-[10px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300" title="BPH diwajibkan piket 3x seminggu"><i class="fa-solid fa-shield-halved text-kse-secondary text-[9px]"></i> BPH</span>' : ''}
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs">
+            ${beswan.nama.charAt(0)}
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-slate-900 leading-snug break-words">${beswan.nama}</span>
+            <div class="flex flex-wrap items-center gap-1 mt-0.5">
+              ${isTodayPiket ? '<span class="inline-block text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold border border-emerald-300">Piket Hari Ini</span>' : ''}
+              ${isBPH ? '<span class="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300" title="BPH diwajibkan piket 3x seminggu"><i class="fa-solid fa-shield text-[8px] text-amber-600"></i> BPH</span>' : ''}
+            </div>
           </div>
         </div>
       </td>
-      <td class="py-3 px-4 text-gray-600 text-xs">
-        <span class="leading-snug break-words" title="${beswan.divisi}">${beswan.divisi}</span>
+      <td class="py-3 px-4 text-slate-600 text-xs">
+        <span class="font-medium text-slate-700 leading-snug break-words" title="${beswan.divisi}">${beswan.divisi}</span>
       </td>
       <td class="py-3 px-4 text-center">${hariBadgesHtml}</td>
       <td class="py-3 px-4 text-center">${statusBadgeHtml}</td>
@@ -953,8 +959,8 @@ function renderCards(data, todayHari, state) {
 
     const card = document.createElement('div');
     card.className = `p-4 rounded-xl border transition-all ${isTodayPiket
-        ? 'bg-[#FAF7CC]/40 border-kse-primary/40 shadow-xs'
-        : 'bg-white border-gray-200 shadow-xs'
+        ? 'bg-emerald-50/40 border-emerald-300 shadow-xs'
+        : 'bg-white border-slate-200 shadow-xs'
       }`;
 
     let statusBadge = '';
@@ -963,40 +969,40 @@ function renderCards(data, todayHari, state) {
     if (active) {
       const timeLeft = formatRemainingSeconds(active.targetEndTime - Date.now());
       statusBadge = `
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
           <i class="fa-regular fa-clock text-amber-600"></i>
-          <span>Sedang Piket: <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span></span>
+          <span><span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span></span>
         </span>
       `;
       actionBtn = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
-          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50/50 hover:bg-rose-50 border border-rose-200 flex items-center justify-center gap-2 active:scale-[0.99] transition"
+          class="w-full py-2.5 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
         >
           <i class="fa-solid fa-xmark text-xs"></i> Batalkan Piket
         </button>
       `;
     } else if (completedCount > 0) {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai Piket
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai
         </span>
       `;
       actionBtn = `
-        <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50/60 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-2">
+        <button disabled class="w-full py-2.5 px-3 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-2">
           <i class="fa-solid fa-check text-emerald-600"></i> Sudah Piket Hari Ini
         </button>
       `;
     } else {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
-          Belum Piket
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          Belum
         </span>
       `;
       actionBtn = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs transition"
+          class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-95 flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
         >
           <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Mulai Piket (1 Jam)
         </button>
@@ -1008,8 +1014,8 @@ function renderCards(data, todayHari, state) {
       const sess = rec.sessions[0];
       const timeRange = (sess && sess.jamMasuk && sess.jamSelesai) ? `${sess.jamMasuk.substring(0, 5)} - ${sess.jamSelesai.substring(0, 5)}` : '60 Menit';
       historyHtml = `
-        <div class="flex items-center gap-2 py-1 text-xs">
-          <span class="text-[11px] text-gray-500">Waktu Kehadiran:</span>
+        <div class="flex items-center gap-2 py-1.5 text-xs border-t border-slate-100 mt-2">
+          <span class="text-[11px] text-slate-500">Waktu:</span>
           <span class="text-[10px] ${sess && sess.synced ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-300'} px-2 py-0.5 rounded border font-mono inline-flex items-center gap-1.5">
             <span>${timeRange}</span>
             ${sess && sess.synced ? '<i class="fa-solid fa-circle-check text-[9px] text-emerald-600" title="Tersinkronkan ke Sheets"></i>' : '<i class="fa-solid fa-cloud-arrow-up text-[9px] text-amber-600 animate-pulse" title="Menunggu sinkronisasi"></i>'}
@@ -1019,15 +1025,21 @@ function renderCards(data, todayHari, state) {
     }
 
     card.innerHTML = `
-      <div class="flex items-start justify-between gap-3 mb-2">
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5 mb-0.5">
-            <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">#${beswan.id}</span>
-            <h4 class="text-xs font-bold text-gray-900 leading-snug break-words">${beswan.nama}</h4>
+      <div class="flex items-start justify-between gap-3 mb-2.5">
+        <div class="flex items-start gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs mt-0.5">
+            ${beswan.nama.charAt(0)}
           </div>
-          <div class="flex flex-wrap items-center gap-1">
-            <p class="text-[11px] text-gray-500 leading-tight break-words">${beswan.divisi}</p>
-            ${isBPH ? '<span class="inline-block text-[10px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300">BPH</span>' : ''}
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 mb-0.5">
+              <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono">#${beswan.id}</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-snug break-words">${beswan.nama}</h4>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-tight break-words">${beswan.divisi}</p>
+            <div class="flex flex-wrap items-center gap-1 mt-1">
+              ${isTodayPiket ? '<span class="inline-block text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-300">Piket Hari Ini</span>' : ''}
+              ${isBPH ? '<span class="inline-block text-[9px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300">BPH</span>' : ''}
+            </div>
           </div>
         </div>
         <div class="shrink-0">
@@ -1035,8 +1047,8 @@ function renderCards(data, todayHari, state) {
         </div>
       </div>
 
-      <div class="flex items-center justify-between text-xs py-1.5 border-t border-gray-100 my-1">
-        <span class="text-gray-500 text-[11px] shrink-0 mr-2">Jadwal Piket:</span>
+      <div class="flex items-center justify-between text-xs py-2 border-t border-slate-100 my-1">
+        <span class="text-slate-500 text-[11px] font-medium shrink-0 mr-2">Jadwal:</span>
         ${renderMobileJadwalBadges(beswan.hari_piket, todayHari)}
       </div>
 
@@ -1281,3 +1293,235 @@ async function copyRekapFromModal() {
   }
 }
 
+// ================= TABEL PIKET MINGGUAN (SENIN S.D. SABTU) =================
+let currentActiveView = 'presensi';
+let currentJadwalDayFilter = 'semua';
+let currentJadwalSearch = '';
+
+function switchView(viewName) {
+  currentActiveView = viewName;
+  const viewPresensi = document.getElementById('viewPresensi');
+  const viewJadwal = document.getElementById('viewJadwal');
+  const tabPresensi = document.getElementById('tabBtnPresensi');
+  const tabJadwal = document.getElementById('tabBtnJadwal');
+
+  if (viewName === 'jadwal') {
+    if (viewPresensi) viewPresensi.classList.add('hidden');
+    if (viewJadwal) viewJadwal.classList.remove('hidden');
+
+    if (tabPresensi) {
+      tabPresensi.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all hover:bg-white/60";
+    }
+    if (tabJadwal) {
+      tabJadwal.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs bg-white text-kse-primary border border-slate-200";
+    }
+
+    renderJadwalTable();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    if (viewJadwal) viewJadwal.classList.add('hidden');
+    if (viewPresensi) viewPresensi.classList.remove('hidden');
+
+    if (tabPresensi) {
+      tabPresensi.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs bg-white text-kse-primary border border-slate-200";
+    }
+    if (tabJadwal) {
+      tabJadwal.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all hover:bg-white/60";
+    }
+  }
+}
+
+function filterJadwalDay(day) {
+  currentJadwalDayFilter = day;
+  const buttons = document.querySelectorAll('.day-filter-btn');
+  buttons.forEach(btn => {
+    btn.className = "day-filter-btn px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition shrink-0";
+  });
+
+  const activeBtn = document.getElementById('btnDayFilter' + day);
+  if (activeBtn) {
+    activeBtn.className = "day-filter-btn px-3 py-1 rounded-full text-xs font-bold bg-kse-primary text-white border border-kse-primary transition shrink-0 shadow-xs";
+  }
+
+  renderJadwalTable();
+}
+
+function handleJadwalSearch(query) {
+  currentJadwalSearch = (query || '').trim().toLowerCase();
+  const clearBtn = document.getElementById('clearJadwalSearchBtn');
+  if (clearBtn) {
+    if (currentJadwalSearch) clearBtn.classList.remove('hidden');
+    else clearBtn.classList.add('hidden');
+  }
+  renderJadwalTable();
+}
+
+function clearJadwalSearch() {
+  const input = document.getElementById('jadwalSearchInput');
+  if (input) input.value = '';
+  handleJadwalSearch('');
+}
+
+function renderJadwalTable() {
+  const container = document.getElementById('jadwalGridContainer');
+  const emptyState = document.getElementById('jadwalEmptyState');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const todayHari = getTodayHariName();
+
+  const visibleDays = currentJadwalDayFilter === 'semua'
+    ? days
+    : days.filter(d => d.toLowerCase() === currentJadwalDayFilter.toLowerCase());
+
+  let totalVisibleMatches = 0;
+
+  visibleDays.forEach(dayName => {
+    // Ambil beswan yang memiliki jadwal piket di hari ini
+    const members = BESWAN_DATA.filter(b => {
+      const arr = getJadwalPiketArray(b.hari_piket);
+      return arr.some(h => h.toLowerCase() === dayName.toLowerCase());
+    });
+
+    // PURE NAMA: hanya b.nama tanpa embel-embel divisi
+    let filteredNames = members.map(b => b.nama);
+
+    if (currentJadwalSearch) {
+      filteredNames = filteredNames.filter(name => name.toLowerCase().includes(currentJadwalSearch));
+    }
+
+    totalVisibleMatches += filteredNames.length;
+
+    const isToday = dayName.toLowerCase() === todayHari.toLowerCase();
+
+    // Buat kartu per hari
+    const card = document.createElement('div');
+    card.className = "flex flex-col bg-white rounded-xl border transition-all " + (
+      isToday
+        ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
+        : 'border-slate-200 shadow-xs hover:border-slate-300'
+    );
+
+    // Header kartu hari
+    const headerHtml = `
+      <div class="p-3.5 border-b ${isToday ? 'bg-gradient-to-r from-emerald-800 to-kse-primary text-white' : 'bg-slate-50 text-slate-800 border-slate-200'} rounded-t-xl flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg ${isToday ? 'bg-white/20 text-kse-secondary' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-bold text-xs font-spartan">
+            ${dayName.substring(0, 3).toUpperCase()}
+          </span>
+          <div>
+            <h3 class="font-black font-spartan text-sm tracking-wide ${isToday ? 'text-white' : 'text-slate-900'}">${dayName.toUpperCase()}</h3>
+            <p class="text-[10px] ${isToday ? 'text-emerald-200' : 'text-slate-500'} font-medium">${filteredNames.length} Beswan</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          ${isToday ? '<span class="text-[10px] font-bold bg-kse-secondary text-kse-primary px-1.5 py-0.5 rounded shadow-xs">Hari Ini</span>' : ''}
+          <button
+            onclick="salinJadwalSpesifik('${dayName}')"
+            type="button"
+            class="w-6 h-6 rounded-md ${isToday ? 'hover:bg-white/20 text-white' : 'hover:bg-slate-200 text-slate-500'} flex items-center justify-center transition cursor-pointer"
+            title="Salin daftar nama piket ${dayName} ke clipboard"
+          >
+            <i class="fa-regular fa-copy text-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Body kartu nama murni
+    let listHtml = '';
+    if (filteredNames.length > 0) {
+      listHtml = `
+        <div class="p-2 space-y-1 divide-y divide-slate-100/80 flex-1">
+          ${filteredNames.map((nama, idx) => {
+            const isHighlight = currentJadwalSearch && nama.toLowerCase().includes(currentJadwalSearch);
+            return `
+              <div class="pt-1.5 first:pt-0 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold transition ${
+                isHighlight ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300' : 'text-slate-800 hover:bg-slate-50'
+              }">
+                <span class="w-5 h-5 rounded-full ${isToday ? 'bg-emerald-50 text-emerald-800 font-bold' : 'bg-slate-100 text-slate-500 font-medium'} flex items-center justify-center text-[10px] shrink-0 font-mono">
+                  ${idx + 1}
+                </span>
+                <span class="leading-tight break-words truncate" title="${nama}">${nama}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } else {
+      listHtml = `
+        <div class="p-6 text-center text-slate-400 text-xs italic flex-1 flex items-center justify-center">
+          Tidak ada nama
+        </div>
+      `;
+    }
+
+    card.innerHTML = headerHtml + listHtml;
+    container.appendChild(card);
+  });
+
+  if (emptyState) {
+    if (totalVisibleMatches === 0 && currentJadwalSearch) {
+      emptyState.classList.remove('hidden');
+    } else {
+      emptyState.classList.add('hidden');
+    }
+  }
+}
+
+function salinJadwalSpesifik(dayName) {
+  const members = BESWAN_DATA.filter(b => {
+    const arr = getJadwalPiketArray(b.hari_piket);
+    return arr.some(h => h.toLowerCase() === dayName.toLowerCase());
+  }).map(b => b.nama);
+
+  if (members.length === 0) {
+    showToast(`Tidak ada jadwal piket untuk hari ${dayName}.`, 'warning');
+    return;
+  }
+
+  let text = `Jadwal Piket ${dayName} - Sekretariat Paguyuban KSE UNRI:\n`;
+  members.forEach((nama, idx) => {
+    text += `${idx + 1}. ${nama}\n`;
+  });
+
+  copyTextToClipboard(text).then(success => {
+    if (success) {
+      showToast(`Jadwal piket hari ${dayName} berhasil disalin ke clipboard!`, 'success');
+    } else {
+      openRekapModal(text);
+    }
+  });
+}
+
+function salinJadwalHariIni() {
+  const todayHari = getTodayHariName();
+  salinJadwalSpesifik(todayHari);
+}
+
+function salinSemuaJadwal() {
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  let text = `JADWAL PIKET SEKRETARIAT PAGUYUBAN KSE UNRI\n(Total 71 Beswan)\n\n`;
+
+  days.forEach(dayName => {
+    const members = BESWAN_DATA.filter(b => {
+      const arr = getJadwalPiketArray(b.hari_piket);
+      return arr.some(h => h.toLowerCase() === dayName.toLowerCase());
+    }).map(b => b.nama);
+
+    text += `📌 ${dayName.toUpperCase()} (${members.length} Orang):\n`;
+    members.forEach((nama, idx) => {
+      text += `${idx + 1}. ${nama}\n`;
+    });
+    text += `\n`;
+  });
+
+  copyTextToClipboard(text).then(success => {
+    if (success) {
+      showToast('Seluruh jadwal piket (Senin - Sabtu) berhasil disalin ke clipboard!', 'success');
+    } else {
+      openRekapModal(text);
+    }
+  });
+}

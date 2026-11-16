@@ -1,6 +1,6 @@
 /* ==========================================================================
-   IDENTITAS VISUAL & TEMA PAGUYUBAN KSE UNRI (PROFESIONAL & CLEAN)
-   Primary: #004834 | Accent: #EEB319 | Highlight: #FAF7CC
+   IDENTITAS VISUAL & TEMA PAGUYUBAN KSE UNRI (MODERN, CLEAN & PROFESIONAL)
+   Primary: #004834 | Accent: #EEB319 | Highlight: #FAF7CC | Background: #F8FAFC
    ========================================================================== */
 
 :root {
@@ -10,69 +10,89 @@
   --kse-highlight: #FAF7CC;
   --kse-earth: #6F4E37;
   --kse-earth-light: #9C7C5A;
-  --kse-bg: #F4F6F5;
+  --kse-bg: #F8FAFC;
 }
 
 body {
   font-family: 'Montserrat', sans-serif;
   background-color: var(--kse-bg);
-  color: #1F2937;
+  color: #0F172A;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: 'League Spartan', sans-serif;
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbar - Subtil & Bersih */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #E5E7EB;
+  background: #F1F5F9;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #9CA3AF;
-  border-radius: 2px;
+  background: #CBD5E1;
+  border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--kse-primary);
+  background: #94A3B8;
 }
 
-/* Highlight Piket Hari Ini - Kontras namun Elegan */
+/* Row Highlight Piket Hari Ini - Modern Mint/Emerald Accent */
 .row-piket-today {
-  background-color: #FAF7CC !important;
-  border-left: 3px solid var(--kse-primary) !important;
+  background-color: #F0FDF4 !important;
+  border-left: 4px solid var(--kse-primary) !important;
 }
 .row-piket-today:hover {
-  background-color: #F5F1B5 !important;
+  background-color: #DCFCE7 !important;
 }
 
-/* Fixed Table Layout Rule */
+/* Fixed Table Layout */
 .table-fixed-kse {
   table-layout: fixed;
   width: 100%;
 }
 
-/* Smooth Focus states */
-button, input {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+/* Smooth Interactive Elements */
+button, input, select {
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Modal Overlay & Focus Trap */
 .modal-backdrop-overlay {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 9999;
 }
 
+/* Subtle Badge Glow */
+.badge-today-glow {
+  box-shadow: 0 0 0 2px rgba(238, 179, 25, 0.35);
+}
 
+/* Card hover animation */
+.kse-card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.kse-card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 72, 52, 0.08);
+}
+
+/* Print Friendly Styles for Jadwal */
+@media print {
+  header, footer, #viewPresensi, .no-print {
+    display: none !important;
+  }
+  #viewJadwal {
+    display: block !important;
+  }
+}
