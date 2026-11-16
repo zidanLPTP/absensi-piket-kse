@@ -79,45 +79,29 @@ function isBeswanPiketToday(beswan, todayHari) {
 function renderJadwalBadges(hariPiket, todayHari) {
   const list = getJadwalPiketArray(hariPiket);
   if (list.length === 0) {
-    return `<span class="text-gray-400 text-xs">-</span>`;
+    return '<span class="text-slate-400 text-xs">-</span>';
   }
-  return `
-    <div class="flex flex-wrap items-center justify-center gap-1">
-      ${list.map(hari => {
-        const isToday = hari.toLowerCase() === todayHari.toLowerCase();
-        if (isToday) {
-          return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-kse-primary text-white shadow-xs">
-            ${hari}
-          </span>`;
-        }
-        return `<span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-          ${hari}
-        </span>`;
-      }).join('')}
-    </div>
-  `;
+  return list.map(hari => {
+    const isToday = hari.toLowerCase() === todayHari.toLowerCase();
+    if (isToday) {
+      return '<span class="font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[11px] border border-emerald-300 shadow-xs">' + hari + '</span>';
+    }
+    return '<span class="text-slate-600 font-medium text-[11px]">' + hari + '</span>';
+  }).join('<span class="text-slate-300 mx-1">,</span>');
 }
 
 function renderMobileJadwalBadges(hariPiket, todayHari) {
   const list = getJadwalPiketArray(hariPiket);
   if (list.length === 0) {
-    return `<span class="text-gray-400 text-xs">-</span>`;
+    return '<span class="text-slate-400 text-xs">-</span>';
   }
-  return `
-    <div class="flex flex-wrap items-center justify-end gap-1">
-      ${list.map(hari => {
-        const isToday = hari.toLowerCase() === todayHari.toLowerCase();
-        if (isToday) {
-          return `<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-kse-primary text-white shadow-xs">
-            ${hari} (Hari Ini)
-          </span>`;
-        }
-        return `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-600 bg-gray-100 border border-gray-200">
-          ${hari}
-        </span>`;
-      }).join('')}
-    </div>
-  `;
+  return list.map(hari => {
+    const isToday = hari.toLowerCase() === todayHari.toLowerCase();
+    if (isToday) {
+      return '<span class="font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[10px] border border-emerald-300">' + hari + '</span>';
+    }
+    return '<span class="text-slate-600 font-medium text-[10px]">' + hari + '</span>';
+  }).join('<span class="text-slate-300 mx-1">,</span>');
 }
 
 // ================= LIFECYCLE & INIT =================
@@ -851,13 +835,12 @@ function renderTable(data, todayHari, state) {
 
   data.forEach((beswan) => {
     const isTodayPiket = isBeswanPiketToday(beswan, todayHari);
-    const isBPH = beswan.divisi.includes('BPH') || beswan.divisi.toLowerCase().includes('pengurus harian');
     const rec = normalizeRecord(state[beswan.id]);
     const active = rec.activeSession;
     const completedCount = rec.sessions.length;
 
     const tr = document.createElement('tr');
-    tr.className = `transition-colors ${isTodayPiket ? 'row-piket-today font-medium' : 'hover:bg-slate-50'}`;
+    tr.className = 'transition-colors ' + (isTodayPiket ? 'row-piket-today font-medium' : 'hover:bg-slate-50/80');
 
     let statusBadgeHtml = '';
     let actionBtnHtml = '';
@@ -865,18 +848,19 @@ function renderTable(data, todayHari, state) {
     if (active) {
       const timeLeft = formatRemainingSeconds(active.targetEndTime - Date.now());
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
-          <i class="fa-regular fa-clock text-amber-600"></i>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
+          <i class="fa-regular fa-clock text-amber-600 text-[11px]"></i>
           <span>Sedang Piket (<span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>)</span>
         </div>
       `;
       actionBtnHtml = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
-          class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+          class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
           title="Batalkan piket"
         >
-          <i class="fa-solid fa-xmark text-xs"></i> Batalkan
+          <i class="fa-solid fa-xmark text-xs"></i>
+          <span>Batalkan</span>
         </button>
       `;
     } else if (completedCount > 0) {
@@ -886,21 +870,21 @@ function renderTable(data, todayHari, state) {
         ? '<i class="fa-solid fa-circle-check text-emerald-600 text-[10px]" title="Tersinkron ke Google Sheets"></i>' 
         : '<i class="fa-solid fa-cloud-arrow-up text-amber-600 text-[10px] animate-pulse" title="Menunggu sinkronisasi"></i>';
       statusBadgeHtml = `
-        <div class="inline-flex flex-col items-center justify-center text-center px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
-          <span class="inline-flex items-center gap-1 text-emerald-700 font-bold">
-            ${syncMark} Selesai Piket
-          </span>
-          <span class="text-[10px] text-slate-500 font-mono" title="Waktu piket: ${timeRange}">${timeRange}</span>
+        <div class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
+          ${syncMark}
+          <span>Selesai</span>
+          <span class="text-[10px] text-slate-500 font-mono ml-0.5">(${timeRange})</span>
         </div>
       `;
       actionBtnHtml = `
-        <button disabled class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed">
-          <i class="fa-solid fa-check text-emerald-600 text-[11px]"></i> Sudah Piket
+        <button disabled class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed">
+          <i class="fa-solid fa-check text-emerald-600 text-[11px]"></i>
+          <span>Sudah Piket</span>
         </button>
       `;
     } else {
       statusBadgeHtml = `
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           <span>Belum Piket</span>
         </div>
@@ -908,9 +892,10 @@ function renderTable(data, todayHari, state) {
       actionBtnHtml = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs cursor-pointer active:scale-95"
+          class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen transition shadow-xs cursor-pointer active:scale-95"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary text-xs"></i> Mulai Piket (1 Jam)
+          <i class="fa-solid fa-play text-kse-secondary text-[10px]"></i>
+          <span>Mulai Piket</span>
         </button>
       `;
     }
@@ -918,27 +903,21 @@ function renderTable(data, todayHari, state) {
     const hariBadgesHtml = renderJadwalBadges(beswan.hari_piket, todayHari);
 
     tr.innerHTML = `
-      <td class="py-3 px-4 text-center text-xs text-slate-400 font-semibold font-mono">${beswan.id}</td>
-      <td class="py-3 px-4">
+      <td class="py-2.5 px-4 text-center text-xs text-slate-400 font-semibold font-mono">${beswan.id}</td>
+      <td class="py-2.5 px-4">
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs">
+          <div class="w-7 h-7 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs">
             ${beswan.nama.charAt(0)}
           </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-slate-900 leading-snug break-words">${beswan.nama}</span>
-            <div class="flex flex-wrap items-center gap-1 mt-0.5">
-              ${isTodayPiket ? '<span class="inline-block text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold border border-emerald-300">Piket Hari Ini</span>' : ''}
-              ${isBPH ? '<span class="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300" title="BPH diwajibkan piket 3x seminggu"><i class="fa-solid fa-shield text-[8px] text-amber-600"></i> BPH</span>' : ''}
-            </div>
-          </div>
+          <span class="font-bold text-slate-900 leading-snug break-words">${beswan.nama}</span>
         </div>
       </td>
-      <td class="py-3 px-4 text-slate-600 text-xs">
+      <td class="py-2.5 px-4 text-slate-600 text-xs">
         <span class="font-medium text-slate-700 leading-snug break-words" title="${beswan.divisi}">${beswan.divisi}</span>
       </td>
-      <td class="py-3 px-4 text-center">${hariBadgesHtml}</td>
-      <td class="py-3 px-4 text-center">${statusBadgeHtml}</td>
-      <td class="py-3 px-4 text-center">${actionBtnHtml}</td>
+      <td class="py-2.5 px-4 text-center whitespace-nowrap">${hariBadgesHtml}</td>
+      <td class="py-2.5 px-4 text-center whitespace-nowrap">${statusBadgeHtml}</td>
+      <td class="py-2.5 px-4 text-center">${actionBtnHtml}</td>
     `;
 
     tbody.appendChild(tr);
@@ -952,16 +931,15 @@ function renderCards(data, todayHari, state) {
 
   data.forEach((beswan) => {
     const isTodayPiket = isBeswanPiketToday(beswan, todayHari);
-    const isBPH = beswan.divisi.includes('BPH') || beswan.divisi.toLowerCase().includes('pengurus harian');
     const rec = normalizeRecord(state[beswan.id]);
     const active = rec.activeSession;
     const completedCount = rec.sessions.length;
 
     const card = document.createElement('div');
-    card.className = `p-4 rounded-xl border transition-all ${isTodayPiket
+    card.className = 'p-3.5 rounded-xl border transition-all ' + (isTodayPiket
         ? 'bg-emerald-50/40 border-emerald-300 shadow-xs'
         : 'bg-white border-slate-200 shadow-xs'
-      }`;
+      );
 
     let statusBadge = '';
     let actionBtn = '';
@@ -969,42 +947,46 @@ function renderCards(data, todayHari, state) {
     if (active) {
       const timeLeft = formatRemainingSeconds(active.targetEndTime - Date.now());
       statusBadge = `
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
-          <i class="fa-regular fa-clock text-amber-600"></i>
-          <span><span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span></span>
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+          <i class="fa-regular fa-clock text-amber-600 text-[10px]"></i>
+          <span class="timer-display-${beswan.id} font-mono font-bold">${timeLeft}</span>
         </span>
       `;
       actionBtn = `
         <button
           onclick="bukaModalBatalkan(${beswan.id})"
-          class="w-full py-2.5 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
+          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
         >
-          <i class="fa-solid fa-xmark text-xs"></i> Batalkan Piket
+          <i class="fa-solid fa-xmark text-xs"></i>
+          <span>Batalkan Piket</span>
         </button>
       `;
     } else if (completedCount > 0) {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
-          <i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i>
+          <span>Selesai</span>
         </span>
       `;
       actionBtn = `
-        <button disabled class="w-full py-2.5 px-3 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-2">
-          <i class="fa-solid fa-check text-emerald-600"></i> Sudah Piket Hari Ini
+        <button disabled class="w-full py-2 px-3 rounded-lg text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 cursor-not-allowed flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-check text-emerald-600 text-[11px]"></i>
+          <span>Sudah Piket Hari Ini</span>
         </button>
       `;
     } else {
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
           Belum
         </span>
       `;
       actionBtn = `
         <button
           onclick="mulaiAbsen(${beswan.id})"
-          class="w-full py-2.5 px-3 rounded-lg text-xs font-bold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-95 flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
+          class="w-full py-2 px-3 rounded-lg text-xs font-semibold text-white bg-kse-primary hover:bg-kse-darkGreen active:scale-95 flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
         >
-          <i class="fa-solid fa-right-to-bracket text-kse-secondary"></i> Mulai Piket (1 Jam)
+          <i class="fa-solid fa-play text-kse-secondary text-[10px]"></i>
+          <span>Mulai Piket</span>
         </button>
       `;
     }
@@ -1014,7 +996,7 @@ function renderCards(data, todayHari, state) {
       const sess = rec.sessions[0];
       const timeRange = (sess && sess.jamMasuk && sess.jamSelesai) ? `${sess.jamMasuk.substring(0, 5)} - ${sess.jamSelesai.substring(0, 5)}` : '60 Menit';
       historyHtml = `
-        <div class="flex items-center gap-2 py-1.5 text-xs border-t border-slate-100 mt-2">
+        <div class="flex items-center gap-2 py-1 text-xs border-t border-slate-100 mt-2">
           <span class="text-[11px] text-slate-500">Waktu:</span>
           <span class="text-[10px] ${sess && sess.synced ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-900 border-amber-300'} px-2 py-0.5 rounded border font-mono inline-flex items-center gap-1.5">
             <span>${timeRange}</span>
@@ -1025,21 +1007,17 @@ function renderCards(data, todayHari, state) {
     }
 
     card.innerHTML = `
-      <div class="flex items-start justify-between gap-3 mb-2.5">
+      <div class="flex items-start justify-between gap-3 mb-2">
         <div class="flex items-start gap-2.5 min-w-0">
-          <div class="w-8 h-8 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs mt-0.5">
+          <div class="w-7 h-7 rounded-full ${isTodayPiket ? 'bg-kse-primary text-white font-bold' : 'bg-slate-100 text-slate-600 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-xs mt-0.5">
             ${beswan.nama.charAt(0)}
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-1.5 mb-0.5">
-              <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono">#${beswan.id}</span>
+              <span class="text-[10px] font-bold text-slate-400 font-mono">#${beswan.id}</span>
               <h4 class="text-xs font-bold text-slate-900 leading-snug break-words">${beswan.nama}</h4>
             </div>
             <p class="text-[11px] text-slate-500 leading-tight break-words">${beswan.divisi}</p>
-            <div class="flex flex-wrap items-center gap-1 mt-1">
-              ${isTodayPiket ? '<span class="inline-block text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-300">Piket Hari Ini</span>' : ''}
-              ${isBPH ? '<span class="inline-block text-[9px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-300">BPH</span>' : ''}
-            </div>
           </div>
         </div>
         <div class="shrink-0">
@@ -1047,14 +1025,16 @@ function renderCards(data, todayHari, state) {
         </div>
       </div>
 
-      <div class="flex items-center justify-between text-xs py-2 border-t border-slate-100 my-1">
+      <div class="flex items-center justify-between text-xs py-1.5 border-t border-slate-100 my-1">
         <span class="text-slate-500 text-[11px] font-medium shrink-0 mr-2">Jadwal:</span>
-        ${renderMobileJadwalBadges(beswan.hari_piket, todayHari)}
+        <div class="text-right text-xs">
+          ${renderMobileJadwalBadges(beswan.hari_piket, todayHari)}
+        </div>
       </div>
 
       ${historyHtml}
 
-      <div class="mt-2.5">
+      <div class="mt-2">
         ${actionBtn}
       </div>
     `;
